@@ -11,12 +11,15 @@ generator client {
 }
 
 model User {
-  id              String       @id @default(uuid())
-  name            String
-  email           String       @unique
-  password        String
-  address         String?
-  phoneNumber     String?
+  id                  String       @id @default(uuid())
+  name                String
+  email               String       @unique
+  password            String
+  address             String?
+  phoneNumber         String?
+
+  verified            Boolean
+  verificationTokens  VerificationToken[]
 
   adminId         String?
   adminProfile    Admin?
@@ -26,6 +29,14 @@ model User {
 
   buyerId         String
   buyerProfile    Buyer?
+}
+
+model VerificationToken {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  valid           Boolean     @default(true)
+  createdAt       DateTime    @default(now())
 }
 
 model Admin {
