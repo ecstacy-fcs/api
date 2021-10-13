@@ -1,15 +1,21 @@
 import "dotenv/config";
 import express from "express";
 import { json } from "body-parser";
+import { PrismaClient } from "@prisma/client";
+
+import auth from "./routes/auth";
+
+const prisma = new PrismaClient();
 
 const app = express();
 
 app.use(json());
 
-app.get("/", (req, res, next) => {
-  res.json({
-    hello: "world",
-  });
+app.use("/auth", auth);
+
+app.get("/", async (req, res, next) => {
+  const users = await prisma.user.findMany();
+  res.json({ users });
 });
 
 app.listen(process.env.PORT, () => {
