@@ -18,7 +18,7 @@ model User {
   address     String?
   phoneNumber String?
 
-  verified Boolean
+  verified Boolean    @default(false)
   tokens   Token[]
 
   adminId      String?
@@ -27,7 +27,6 @@ model User {
   sellerId      String?
   sellerProfile Seller?
 
-  buyerId      String
   buyerProfile Buyer?
 }
 
@@ -64,7 +63,7 @@ model Seller {
 
 model Buyer {
   id     String  @id @default(uuid())
-  user   User    @relation(fields: [userId], references: [id])
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String  @unique
   orders Order[]
 }
