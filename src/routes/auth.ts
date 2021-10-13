@@ -1,6 +1,6 @@
 import express from "express";
 import emailvalidator from "src/common/emailvalidator";
-import { RegistrationCredentials } from "src/types";
+import { LoginCredentials, RegistrationCredentials } from "src/types";
 import passwordvalidator from "src/common/passwordvalidator";
 import bcrypt from 'bcrypt';
 import prisma from "src/common/client";
@@ -47,7 +47,35 @@ route.post("/register", async (req, res, next) => {
     res.sendStatus(200);
 });
 
-route.post("/login", async (req, res, next) => {});
+route.post("/login", async (req, res, next) => {
+    // TODO: Session management, Verification system
+    const credentials: LoginCredentials = req.body
+    if(credentials.email === undefined || credentials.password === undefined || !emailvalidator(credentials.email)){
+        res.sendStatus(400)
+        return
+    }
+    try{
+        console.log(credentials)
+        const user = await prisma.user.findUnique({
+            where:{
+                email: credentials.email
+            }
+        })
+        console.log(user)
+        if(user !== null && !user.verified){
+            res.sendStatus(409)
+            return
+        }
+        if(user===null || !(await bcrypt.compare(credentials.password,user.password))){
+            res.sendStatus(418)
+            return
+        }
+    }
+    catch(exception){
+        res.sendStatus(409)
+    }
+    res.sendStatus(200)
+});
 
 route.get("/logout", async (req, res, next) => {});
 
