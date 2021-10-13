@@ -1,11 +1,10 @@
 import "dotenv/config";
 import express from "express";
 import { json } from "body-parser";
-import { PrismaClient } from "@prisma/client";
-
+import prisma from "./common/client";
 import auth from "./routes/auth";
 
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 
 const app = express();
 
