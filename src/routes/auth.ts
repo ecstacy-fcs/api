@@ -4,6 +4,7 @@ import { LoginCredentials, RegistrationCredentials } from "src/types";
 import passwordvalidator from "src/common/passwordvalidator";
 import bcrypt from 'bcrypt';
 import prisma from "src/common/client";
+import { User } from ".prisma/client";
 
 const route = express();
 
@@ -33,8 +34,6 @@ route.post("/register", async (req, res, next) => {
             password: hashedPassword,
             buyerProfile: {create: {}}
         }})
-        console.log(u)
-        console.log(hashedPassword)
     }
 
     catch (exception){
@@ -54,14 +53,13 @@ route.post("/login", async (req, res, next) => {
         res.sendStatus(400)
         return
     }
+    let user: User
     try{
-        console.log(credentials)
-        const user = await prisma.user.findUnique({
+        user = await prisma.user.findUnique({
             where:{
                 email: credentials.email
             }
         })
-        console.log(user)
         if(user !== null && !user.verified){
             res.sendStatus(409)
             return
@@ -73,11 +71,19 @@ route.post("/login", async (req, res, next) => {
     }
     catch(exception){
         res.sendStatus(409)
+        return
     }
+    //TODO:use session.regenerate here
+    req.session.uid = user.id
+    req.session.loginTime = new Date()
+    req.session.lastActive = new Date()
     res.sendStatus(200)
+    return
 });
 
-route.get("/logout", async (req, res, next) => {});
+route.get("/logout", async (req, res, next) => {
+
+});
 
 route.get("/verify", async (req, res, next) => {});
 
