@@ -12,9 +12,17 @@ export interface LoginCredentials
     password: string
 }
 
+export interface sessionValidationOptions
+{
+    idleTimeout: number
+    absoluteTimeout: number
+}
 
 declare module 'express-session'{
     interface SessionData{
-        uid: string;
+        uid: string
+        loginTime: Date
+        lastActive: Date
+        //millisec
     }
 }
