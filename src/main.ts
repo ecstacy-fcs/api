@@ -14,12 +14,12 @@ app.use(json());
 app.use(session({
   secret:process.env.COOKIE_SECRET.split(' '),
   cookie:{
-    maxAge:10*1000,
+    maxAge:60*60*1000,
     httpOnly:true,
     //TODO: set secure to true,
     secure:false,
   },
-  name:'svetlana',
+  name:process.env.SESSION_NAME,
   resave:true,
   saveUninitialized:false,
   store: new PrismaSessionStore(
