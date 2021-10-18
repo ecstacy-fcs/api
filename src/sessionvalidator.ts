@@ -5,8 +5,9 @@ import prisma from "src/common/client";
 export default function sessionValidator(options: sessionValidationOptions) {
     return async function (req, res, next) {
 
-        console.log(req.session.uid)
+        console.log('inside sessionValidator',req.session.uid)
         if (req.session.uid === undefined || req.session.uid === null) {
+            console.log('inside uidcheck')
             next()
             return
         }
@@ -19,23 +20,25 @@ export default function sessionValidator(options: sessionValidationOptions) {
         })
 
         if (session === null) {
-            res.sendStatus(400);
+            res.sendStatus(400)
             return
         }
 
         const currentTime = new Date()
         //absolute timeout:
-        if (currentTime.getTime() - req.session.loginTime.getTime() >= options.absoluteTimeout) {
+        if (currentTime.getTime() - (new Date(req.session.loginTime)).getTime() >= options.absoluteTimeout) {
             //send a custom error message for session expiration
-            req.session.regenerate()
-            req.sendStatus(409); //after this logout and  ask the user to reauthenticate
+            req.session.regenerate(function(err){
+                res.sendStatus(409)
+            }) //after this logout and  ask the user to reauthenticate
             return
         }
 
         //idle session:
-        if (currentTime.getTime() - req.session.lastActive.getTime() >= options.idleTimeout) {
-            req.session.regenerate()
-            req.sendStatus(409); //after this logout and ask the user to reauthenticate
+        if (currentTime.getTime() - (new Date(req.session.lastActive)).getTime() >= options.idleTimeout) {
+            req.session.regenerate(function(err){
+                res.sendStatus(409) //after this logout and ask the user to reauthenticate
+            })
             return
         }
 
