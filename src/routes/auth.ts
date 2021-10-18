@@ -82,7 +82,18 @@ route.post("/login", async (req, res, next) => {
 });
 
 route.get("/logout", async (req, res, next) => {
+        if(req.session.uid === undefined || req.session.uid === null)
+        {
+            res.sendStatus(400);
+            return
+        }
 
+        req.session.destroy(function(err)
+        {
+            console.log('logged out')
+            res.sendStatus(200)
+        })
+        return
 });
 
 route.get("/verify", async (req, res, next) => {});
