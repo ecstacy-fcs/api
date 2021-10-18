@@ -1,6 +1,7 @@
 //idle, absolute and renewal timeout
 import { sessionValidationOptions } from "src/types"
 import prisma from "src/common/client";
+import * as ERROR from "src/common/errorcodes"
 
 export default function sessionValidator(options: sessionValidationOptions) {
     return async function (req, res, next) {
@@ -20,7 +21,7 @@ export default function sessionValidator(options: sessionValidationOptions) {
         })
 
         if (session === null) {
-            res.sendStatus(400)
+            res.status(400).json({success:"false", error:ERROR.BAD_INPUT})
             return
         }
 
@@ -29,7 +30,7 @@ export default function sessionValidator(options: sessionValidationOptions) {
         if (currentTime.getTime() - (new Date(req.session.loginTime)).getTime() >= options.absoluteTimeout) {
             //send a custom error message for session expiration
             req.session.regenerate(function(err){
-                res.sendStatus(409)
+                res.status(401).json({success:false, error:ERROR.SESSION_TIMEOUT})
             }) //after this logout and  ask the user to reauthenticate
             return
         }
@@ -37,7 +38,7 @@ export default function sessionValidator(options: sessionValidationOptions) {
         //idle session:
         if (currentTime.getTime() - (new Date(req.session.lastActive)).getTime() >= options.idleTimeout) {
             req.session.regenerate(function(err){
-                res.sendStatus(409) //after this logout and ask the user to reauthenticate
+                res.status(401).json({success:false, error:ERROR.SESSION_TIMEOUT}) //after this logout and ask the user to reauthenticate
             })
             return
         }

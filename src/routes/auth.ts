@@ -5,6 +5,7 @@ import passwordvalidator from "src/common/passwordvalidator";
 import bcrypt from 'bcrypt';
 import prisma from "src/common/client";
 import { User } from ".prisma/client";
+import * as ERROR from "src/common/errorcodes"
 
 const route = express();
 
@@ -13,14 +14,14 @@ route.post("/register", async (req, res, next) => {
     if(credentials.name === undefined || credentials.email === undefined || !emailvalidator(credentials.email) || credentials.password === undefined)
     {
         console.log('invalid credentials type')
-        res.sendStatus(400);
+        res.status(400).json({success:"false", error:ERROR.BAD_INPUT})
         return
     }
 
     if(!passwordvalidator(credentials.password))
     {
         console.log('weak password')
-        res.sendStatus(418); //to do: send a custom error response body
+        res.status(400).json({success:'false', error:ERROR.WEAK_PASSWORD}); //to do: send a custom error response body
         return
     }
 
@@ -38,19 +39,19 @@ route.post("/register", async (req, res, next) => {
 
     catch (exception){
         console.log(exception)
-        res.sendStatus(409);
+        res.status(500).json({success:'false', error:ERROR.DATABASE_ERROR});
         return
     }
     
     //send verification mail
-    res.sendStatus(200);
+    res.sendStatus(201)
 });
 
 route.post("/login", async (req, res, next) => {
     // TODO: Session management, Verification system
     const credentials: LoginCredentials = req.body
     if(credentials.email === undefined || credentials.password === undefined || !emailvalidator(credentials.email)){
-        res.sendStatus(400)
+        res.status(400).json({success:'false', 'error':ERROR.BAD_INPUT})
         return
     }
     let user: User
@@ -61,16 +62,16 @@ route.post("/login", async (req, res, next) => {
             }
         })
         if(user !== null && !user.verified){
-            res.sendStatus(409)
+            res.status(401).json({success:'false', error:ERROR.UNVERIFIED_ACCOUNT})
             return
         }
         if(user===null || !(await bcrypt.compare(credentials.password,user.password))){
-            res.sendStatus(418)
+            res.status(403).json({success:'false', error:ERROR.BAD_INPUT})
             return
         }
     }
     catch(exception){
-        res.sendStatus(409)
+        res.status(500).json({success:'false', error:ERROR.DATABASE_ERROR})
         return
     }
     //TODO:use session.regenerate here
@@ -78,13 +79,12 @@ route.post("/login", async (req, res, next) => {
     req.session.loginTime = new Date()
     req.session.lastActive = new Date()
     res.sendStatus(200)
-    return
 });
 
 route.get("/logout", async (req, res, next) => {
         if(req.session.uid === undefined || req.session.uid === null)
         {
-            res.sendStatus(400);
+            res.status(403).json({success:'false', error:ERROR.ACCESS_DENIED});
             return
         }
 
