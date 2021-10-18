@@ -11,3 +11,10 @@ export interface LoginCredentials
     email: string
     password: string
 }
+
+
+declare module 'express-session'{
+    interface SessionData{
+        uid: string;
+    }
+}
