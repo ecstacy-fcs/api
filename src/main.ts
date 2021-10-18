@@ -5,7 +5,7 @@ import prisma from "./common/client";
 import auth from "./routes/auth";
 import session from "express-session";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
-// const prisma = new PrismaClient();
+import sessionValidator from "./sessionValidator";
 
 const app = express();
 
@@ -21,7 +21,7 @@ app.use(session({
   },
   name:process.env.SESSION_NAME,
   resave:true,
-  saveUninitialized:false,
+  saveUninitialized:true,
   store: new PrismaSessionStore(
     prisma,
     {
@@ -31,10 +31,13 @@ app.use(session({
   )
 }));
 
+app.use(sessionValidator({idleTimeout:10*1000, absoluteTimeout:60*1000}))
+//idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000
 app.use("/auth", auth);
 
 app.get("/", async (req, res, next) => {
   const users = await prisma.user.findMany();
+  console.log(req.sessionID)
   res.json({ users });
 });
 
