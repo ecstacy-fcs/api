@@ -3,13 +3,36 @@ import express from "express";
 import { json } from "body-parser";
 import prisma from "./common/client";
 import auth from "./routes/auth";
-
-// const prisma = new PrismaClient();
+import session from "express-session";
+import { PrismaSessionStore } from "@quixo3/prisma-session-store";
+import sessionValidator from "./sessionValidator";
 
 const app = express();
 
 app.use(json());
 
+app.use(session({
+  secret:process.env.COOKIE_SECRET.split(' '),
+  cookie:{
+    maxAge:60*60*1000,
+    httpOnly:true,
+    //TODO: set secure to true,
+    secure:false,
+  },
+  name:process.env.SESSION_NAME,
+  resave:true,
+  saveUninitialized:true,
+  store: new PrismaSessionStore(
+    prisma,
+    {
+      checkPeriod: 7*24*60*60*1000,
+      dbRecordIdIsSessionId: true,
+    }
+  )
+}));
+
+app.use(sessionValidator({idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000}))
+//idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000
 app.use("/auth", auth);
 
 app.get("/", async (req, res, next) => {
