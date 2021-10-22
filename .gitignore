@@ -2,6 +2,8 @@
 
 prisma/migrations
 .vscode
+request.rest
+.DS_Store
 
 # Created by https://www.toptal.com/developers/gitignore/api/node
 
