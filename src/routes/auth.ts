@@ -22,17 +22,26 @@ route.post("/register", async (req, res, next) => {
     return;
   }
 
+  if (!passwordvalidator(credentials.password)) {
+    console.log("weak password");
+    res.status(400).json({ success: "false", error: ERROR.WEAK_PASSWORD }); //to do: send a custom error response body
+    return;
+  }
+
   try {
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(credentials.password, salt);
+
     const u = await prisma.user.create({
       data: {
         name: credentials.name,
         email: credentials.email,
-        password: credentials.password,
+        password: hashedPassword,
         buyerProfile: { create: {} },
       },
     });
   } catch (exception) {
-    console.error(exception);
+    console.log(exception);
     res.status(500).json({ success: "false", error: ERROR.DATABASE_ERROR });
     return;
   }
