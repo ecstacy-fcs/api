@@ -1,23 +1,23 @@
-import 'dotenv/config';
-import express from 'express';
-import { json } from 'body-parser';
-import prisma from './common/client';
-import auth from './routes/auth';
-import session from 'express-session';
-import { PrismaSessionStore } from '@quixo3/prisma-session-store';
-import sessionValidator from './sessionValidator';
-import cors from 'cors';
+import "dotenv/config";
+import express from "express";
+import { json } from "body-parser";
+import prisma from "./common/client";
+import auth from "./routes/auth";
+import session from "express-session";
+import { PrismaSessionStore } from "@quixo3/prisma-session-store";
+import sessionValidator from "./sessionValidator";
+import cors from "cors";
 
 const app = express();
 
 app.use(json());
 app.use(
-  cors({ origin: ['http://localhost:3000'], methods: ['GET', 'POST', 'PATCH'] }) // update this for the VM
+  cors({ origin: ["http://localhost:3000"], methods: ["GET", "POST", "PATCH"] }) // update this for the VM
 );
 
 app.use(
   session({
-    secret: process.env.COOKIE_SECRET.split(' '),
+    secret: process.env.COOKIE_SECRET.split(" "),
     cookie: {
       maxAge: 60 * 60 * 1000,
       httpOnly: true,
@@ -41,13 +41,13 @@ app.use(
   })
 );
 //idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000
-app.use('/auth', auth);
+app.use("/auth", auth);
 
-app.get('/', async (req, res, next) => {
+app.get("/", async (req, res, next) => {
   const users = await prisma.user.findMany();
   res.json({ users });
 });
 
 app.listen(process.env.PORT, () => {
-  console.log('Listening on port', process.env.PORT);
+  console.log("Listening on port", process.env.PORT);
 });
