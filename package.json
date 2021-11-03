@@ -5,7 +5,8 @@
     "build": "tsc && tsconfig-replace-paths --project tsconfig.json",
     "start": "node dist/main",
     "lint": "eslint --ext .ts src",
-    "lint:fix": "eslint --ext .ts src --fix"
+    "lint:fix": "eslint --ext .ts src --fix",
+    "format": "prettier . --write"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.0",

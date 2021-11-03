@@ -1,106 +1,125 @@
+import { User } from "@prisma/client";
+import { compare, genSalt, hash } from "bcrypt";
 import express from "express";
-import emailvalidator from "src/common/emailvalidator";
-import { LoginCredentials, RegistrationCredentials } from "src/types";
-import passwordvalidator from "src/common/passwordvalidator";
-import bcrypt from "bcrypt";
-import prisma from "src/common/client";
-import { User } from ".prisma/client";
-import * as ERROR from "src/common/errorcodes";
+import * as ERROR from "src/constants/errors";
+import { respond } from "src/lib/request-respond";
+import * as email from "src/lib/validators/email";
+import * as password from "src/lib/validators/password";
+import prisma from "src/prisma";
+import { LoginBody, RegisterBody } from "src/types";
 
 const route = express();
 
 route.post("/register", async (req, res, next) => {
-  const credentials: RegistrationCredentials = req.body;
+  const body: RegisterBody = req.body;
+
   if (
-    credentials.name === undefined ||
-    credentials.email === undefined ||
-    !emailvalidator(credentials.email) ||
-    credentials.password === undefined
+    !body.name ||
+    !body.email ||
+    !body.password ||
+    !email.validate(body.email)
   ) {
-    console.log("invalid credentials type");
-    res.status(400).json({ success: "false", error: ERROR.BAD_INPUT });
+    console.log("invalid body type");
+    respond(res, 400, ERROR.BAD_INPUT);
     return;
   }
 
-  if (!passwordvalidator(credentials.password)) {
+  if (!password.validate(body.password)) {
     console.log("weak password");
-    res.status(400).json({ success: "false", error: ERROR.WEAK_PASSWORD }); //to do: send a custom error response body
+    respond(res, 400, ERROR.WEAK_PASSWORD);
     return;
   }
+
+  let user: User;
 
   try {
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(credentials.password, salt);
+    user = await prisma.user.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
 
-    const u = await prisma.user.create({
+    if (user) {
+      respond(res, 400, ERROR.ACCOUNT_EXISTS);
+      return;
+    }
+
+    const salt = await genSalt();
+    const hashedPassword = await hash(body.password, salt);
+
+    console.log({ body });
+
+    user = await prisma.user.create({
       data: {
-        name: credentials.name,
-        email: credentials.email,
+        name: body.name,
+        email: body.email,
         password: hashedPassword,
-        buyerProfile: { create: {} },
+        verified: true,
       },
     });
   } catch (exception) {
     console.log(exception);
-    res.status(500).json({ success: "false", error: ERROR.DATABASE_ERROR });
+    respond(res, 500, ERROR.INTERNAL_ERRROR);
     return;
   }
 
   //send verification mail
-  res.sendStatus(201);
+  res.sendStatus(200);
 });
 
 route.post("/login", async (req, res, next) => {
   // TODO: Session management, Verification system
-  const credentials: LoginCredentials = req.body;
-  if (
-    credentials.email === undefined ||
-    credentials.password === undefined ||
-    !emailvalidator(credentials.email)
-  ) {
-    res.status(400).json({ success: "false", error: ERROR.BAD_INPUT });
+  const body: LoginBody = req.body;
+  if (!body.email || !body.password || !email.validate(body.email)) {
+    respond(res, 400, ERROR.BAD_INPUT);
     return;
   }
+
   let user: User;
+
   try {
     user = await prisma.user.findUnique({
       where: {
-        email: credentials.email,
+        email: body.email,
       },
     });
-    if (user !== null && !user.verified) {
-      res
-        .status(401)
-        .json({ success: "false", error: ERROR.UNVERIFIED_ACCOUNT });
+
+    if (!user) {
+      respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
       return;
     }
-    if (
-      user === null ||
-      !(await bcrypt.compare(credentials.password, user.password))
-    ) {
-      res.status(403).json({ success: "false", error: ERROR.BAD_INPUT });
+
+    if (!(await compare(body.password, user.password))) {
+      respond(res, 403, ERROR.BAD_INPUT);
+      return;
+    }
+
+    if (!user.verified) {
+      respond(res, 401, ERROR.UNVERIFIED_ACCOUNT);
       return;
     }
   } catch (exception) {
-    res.status(500).json({ success: "false", error: ERROR.DATABASE_ERROR });
+    respond(res, 500, ERROR.INTERNAL_ERRROR);
     return;
   }
+
   //TODO:use session.regenerate here
   req.session.uid = user.id;
   req.session.loginTime = new Date();
   req.session.lastActive = new Date();
-  res.sendStatus(200);
+
+  respond(res, 200);
 });
 
 route.get("/logout", async (req, res, next) => {
   if (req.session.uid === undefined || req.session.uid === null) {
-    res.status(403).json({ success: "false", error: ERROR.ACCESS_DENIED });
+    respond(res, 403, ERROR.ACCESS_DENIED);
     return;
   }
 
   req.session.destroy(function (err) {
     console.log("logged out");
-    res.sendStatus(200);
+    respond(res, 200);
   });
   return;
 });

@@ -1,70 +1,63 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id          String  @id @default(uuid())
-  name        String
-  email       String  @unique
-  password    String
-  address     String?
-  phoneNumber String?
-
-  verified Boolean    @default(false)
-  tokens   Token[]
-
-  adminId      String?
-  adminProfile Admin?
-
+  id            String  @id @default(uuid())
+  name          String
+  email         String  @unique
+  password      String
+  address       String?
+  phoneNumber   String?
+  verified      Boolean @default(false)
+  adminId       String?
   sellerId      String?
+  adminProfile  Admin?
+  buyerProfile  Buyer?
   sellerProfile Seller?
-
-  buyerProfile Buyer?
+  tokens        Token[]
 }
 
 model Session {
   id        String   @id @default(uuid())
   sid       String   @unique
-  data      String
   expiresAt DateTime
+  data      String?  @db.VarChar(1028)
 }
 
 model Token {
   id        String    @id @default(uuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
   valid     Boolean   @default(true)
   createdAt DateTime  @default(now())
   type      TokenType
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 model Admin {
   id     String @id @default(uuid())
-  user   User   @relation(fields: [userId], references: [id])
   userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model Seller {
   id               String    @id @default(uuid())
-  user             User      @relation(fields: [userId], references: [id])
   userId           String    @unique
-  products         Product[]
   approved         Boolean   @default(false)
   approvalDocument Bytes?    @db.MediumBlob
+  user             User      @relation(fields: [userId], references: [id])
+  products         Product[]
 }
 
 model Buyer {
   id     String  @id @default(uuid())
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String  @unique
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders Order[]
 }
 
@@ -74,11 +67,11 @@ model Product {
   description String
   price       Int
   sellerId    String
-  seller      Seller          @relation(fields: [sellerId], references: [id])
-  images      ProductImage[]
-  category    ProductCategory @relation(fields: [categoryId], references: [id])
   categoryId  String
+  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  seller      Seller          @relation(fields: [sellerId], references: [id])
   orders      Order[]
+  images      ProductImage[]
 
   @@index([categoryId, name])
 }
@@ -99,11 +92,11 @@ model ProductCategory {
 model Order {
   id        String   @id @default(uuid())
   buyerId   String
-  buyer     Buyer    @relation(fields: [buyerId], references: [id])
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
   quantity  Int      @default(1)
   time      DateTime @default(now())
+  buyer     Buyer    @relation(fields: [buyerId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
 model Event {

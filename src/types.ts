@@ -1,24 +1,17 @@
-export interface RegistrationCredentials {
+export interface RegisterBody {
   name: string;
   email: string;
   password: string;
 }
-
-export interface LoginCredentials {
+export interface LoginBody {
   email: string;
   password: string;
 }
 
-export interface sessionValidationOptions {
-  idleTimeout: number;
-  absoluteTimeout: number;
-}
-
-declare module 'express-session' {
+declare module "express-session" {
   interface SessionData {
     uid: string;
     loginTime: Date;
     lastActive: Date;
-    //millisec
   }
 }
