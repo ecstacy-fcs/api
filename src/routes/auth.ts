@@ -59,7 +59,7 @@ route.post("/register", async (req, res, next) => {
     });
   } catch (exception) {
     console.log(exception);
-    respond(res, 500, ERROR.INTERNAL_ERRROR);
+    respond(res, 500, ERROR.INTERNAL_ERROR);
     return;
   }
 
@@ -99,7 +99,7 @@ route.post("/login", async (req, res, next) => {
       return;
     }
   } catch (exception) {
-    respond(res, 500, ERROR.INTERNAL_ERRROR);
+    respond(res, 500, ERROR.INTERNAL_ERROR);
     return;
   }
 

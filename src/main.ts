@@ -9,6 +9,8 @@ import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
+import products from "./routes/products";
+import * as ERROR from "src/constants/errors";
 
 const app = express();
 
@@ -44,14 +46,30 @@ app.use(sessionValidator);
 
 app.use("/auth", auth);
 app.use("/buy", buy);
+app.use("/products", products);
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
 });
 
-app.get("/users", async (req, res, next) => {
-  const users = await prisma.user.findMany();
-  respond(res, 200, "", users);
+app.get("/user", async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.session.uid,
+      },
+      include: {
+        buyerProfile: true,
+        sellerProfile: true,
+        adminProfile: true,
+        tokens: true,
+      },
+    });
+    respond(res, 200, "logged-in user", user);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, ERROR.INTERNAL_ERROR);
+  }
 });
 
 app.listen(process.env.PORT, () => {
