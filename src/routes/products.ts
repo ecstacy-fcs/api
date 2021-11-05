@@ -22,6 +22,45 @@ route.get("/", async (req, res, next) => {
   }
 });
 
+route.post("/", async (req, res, next) => {
+  const body = req.body;
+  try {
+    const user = await prisma.seller.findUnique({
+      where: {
+        userId: req.session.uid,
+      },
+    });
+
+    if (!user) {
+      respond(res, 403, ACCESS_DENIED);
+      return;
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        name: body.name,
+        description: body.description,
+        price: body.price,
+        category: {
+          connect: {
+            id: body.category,
+          },
+        },
+        seller: {
+          connect: { id: user.id },
+        },
+        images: {
+          // handle this
+        },
+      },
+    });
+    respond(res, 200, "success", product);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, INTERNAL_ERROR);
+  }
+});
+
 route.get("/:productId", async (req, res, next) => {
   try {
     const product = await prisma.product.findUnique({
@@ -44,21 +83,22 @@ route.get("/:productId", async (req, res, next) => {
 
 route.put("/:productId", async (req, res, next) => {
   try {
-    const seller = await prisma.seller.findUnique({
-      where: {
-        userId: req.session.uid,
-      },
-    });
-    const admin = await prisma.admin.findUnique({
-      where: {
-        userId: req.session.uid,
-      },
-    });
-    if (!seller && !admin) {
+    const user =
+      (await prisma.seller.findUnique({
+        where: {
+          userId: req.session.uid,
+        },
+      })) ||
+      (await prisma.admin.findUnique({
+        where: {
+          userId: req.session.uid,
+        },
+      }));
+
+    if (!user) {
       respond(res, 403, ACCESS_DENIED);
       return;
     }
-
     const product = await prisma.product.update({
       where: {
         id: req.params.productId,
@@ -77,17 +117,19 @@ route.put("/:productId", async (req, res, next) => {
 
 route.delete("/:productId", async (req, res, next) => {
   try {
-    const seller = await prisma.seller.findUnique({
-      where: {
-        userId: req.session.uid,
-      },
-    });
-    const admin = await prisma.admin.findUnique({
-      where: {
-        userId: req.session.uid,
-      },
-    });
-    if (!seller && !admin) {
+    const user =
+      (await prisma.seller.findUnique({
+        where: {
+          userId: req.session.uid,
+        },
+      })) ||
+      (await prisma.admin.findUnique({
+        where: {
+          userId: req.session.uid,
+        },
+      }));
+
+    if (!user) {
       respond(res, 403, ACCESS_DENIED);
       return;
     }
