@@ -4,7 +4,7 @@ import prisma from "src/prisma";
 import * as ERROR from "src/constants/errors";
 const route = express();
 
-route.post("/buy-product/:productId", async (req, res, next) => {
+route.post("/product/:productId", async (req, res, next) => {
   const { productId } = req.params;
 
   try {
@@ -22,9 +22,11 @@ route.post("/buy-product/:productId", async (req, res, next) => {
         },
       },
     });
+
+    respond(res, 200, "success", order);
   } catch (err) {
     console.error(err);
-    respond(res, 500, ERROR.INTERNAL_ERRROR);
+    respond(res, 500, ERROR.INTERNAL_ERROR);
     return;
   }
 
@@ -45,7 +47,7 @@ route.get("/order-history", async (req, res, next) => {
     respond(res, 200, "success", buyer.orders);
   } catch (err) {
     console.error(err);
-    respond(res, 500, ERROR.INTERNAL_ERRROR);
+    respond(res, 500, ERROR.INTERNAL_ERROR);
   }
 });
 
