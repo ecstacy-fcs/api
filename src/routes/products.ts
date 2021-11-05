@@ -1,4 +1,4 @@
-import { INTERNAL_ERROR } from "src/constants/errors";
+import { ACCESS_DENIED, INTERNAL_ERROR } from "src/constants/errors";
 import express from "express";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
@@ -7,7 +7,14 @@ const route = express();
 
 route.get("/", async (req, res, next) => {
   try {
-    const products = await prisma.product.findMany({});
+    const products = await prisma.product.findMany({
+      include: {
+        category: true,
+        seller: true,
+        images: true,
+        orders: true,
+      },
+    });
     respond(res, 200, "all products", products);
   } catch (err) {
     console.error(err);
@@ -21,8 +28,76 @@ route.get("/:productId", async (req, res, next) => {
       where: {
         id: req.params.productId,
       },
+      include: {
+        category: true,
+        seller: true,
+        images: true,
+        orders: true,
+      },
     });
     respond(res, 200, "success", product);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, INTERNAL_ERROR);
+  }
+});
+
+route.put("/:productId", async (req, res, next) => {
+  try {
+    const seller = await prisma.seller.findUnique({
+      where: {
+        userId: req.session.uid,
+      },
+    });
+    const admin = await prisma.admin.findUnique({
+      where: {
+        userId: req.session.uid,
+      },
+    });
+    if (!seller && !admin) {
+      respond(res, 403, ACCESS_DENIED);
+      return;
+    }
+
+    const product = await prisma.product.update({
+      where: {
+        id: req.params.productId,
+      },
+      data: {
+        ...req.body,
+      },
+    });
+
+    respond(res, 200, "success", product);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, INTERNAL_ERROR);
+  }
+});
+
+route.delete("/:productId", async (req, res, next) => {
+  try {
+    const seller = await prisma.seller.findUnique({
+      where: {
+        userId: req.session.uid,
+      },
+    });
+    const admin = await prisma.admin.findUnique({
+      where: {
+        userId: req.session.uid,
+      },
+    });
+    if (!seller && !admin) {
+      respond(res, 403, ACCESS_DENIED);
+      return;
+    }
+
+    const product = await prisma.product.delete({
+      where: {
+        id: req.params.productId,
+      },
+    });
+    respond(res, 200, "success");
   } catch (err) {
     console.error(err);
     respond(res, 500, INTERNAL_ERROR);
