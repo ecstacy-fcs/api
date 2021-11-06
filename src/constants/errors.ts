@@ -1,6 +1,6 @@
 export const BAD_INPUT = "bad input";
 export const WEAK_PASSWORD = "weak password";
-export const INTERNAL_ERRROR =
+export const INTERNAL_ERROR =
   "An internal error has occured while processing this request";
 export const UNVERIFIED_ACCOUNT = "unverified account";
 export const ACCESS_DENIED =
