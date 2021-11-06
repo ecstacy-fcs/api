@@ -8,10 +8,12 @@ export const mail = async ({
   to,
   subject,
   text,
+  html,
 }: {
   to: string | string[];
   subject: string;
-  text: string;
+  text?: string;
+  html?: string;
 }): Promise<boolean> => {
   try {
     await sendgrid.send({
@@ -19,6 +21,7 @@ export const mail = async ({
       to,
       subject,
       text,
+      html,
     });
     return true;
   } catch (err) {
