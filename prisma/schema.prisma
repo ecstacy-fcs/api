@@ -49,7 +49,7 @@ model Seller {
   id               String    @id @default(uuid())
   userId           String    @unique
   approved         Boolean   @default(false)
-  approvalDocument Bytes?    @db.MediumBlob
+  approvalDocument String?
   user             User      @relation(fields: [userId], references: [id])
   products         Product[]
 }
@@ -90,13 +90,14 @@ model ProductCategory {
 }
 
 model Order {
-  id        String   @id @default(uuid())
+  id        String                @id @default(uuid())
   buyerId   String
   productId String
-  quantity  Int      @default(1)
-  time      DateTime @default(now())
-  buyer     Buyer    @relation(fields: [buyerId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int                   @default(1)
+  time      DateTime              @default(now())
+  status    Boolean               @default(false)
+  buyer     Buyer                 @relation(fields: [buyerId], references: [id])
+  product   Product               @relation(fields: [productId], references: [id])
 }
 
 model Event {
