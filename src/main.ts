@@ -9,6 +9,7 @@ import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
+import payment from "./routes/payment"
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use(sessionValidator);
 
 app.use("/auth", auth);
 app.use("/buy", buy);
+app.use("/payment", payment);
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
