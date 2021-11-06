@@ -47,8 +47,6 @@ route.post("/register", async (req, res, next) => {
     const salt = await genSalt();
     const hashedPassword = await hash(body.password, salt);
 
-    console.log({ body });
-
     user = await prisma.user.create({
       data: {
         name: body.name,
@@ -64,7 +62,7 @@ route.post("/register", async (req, res, next) => {
   }
 
   //send verification mail
-  res.sendStatus(200);
+  respond(res, 200, "Account registered");
 });
 
 route.post("/login", async (req, res, next) => {
@@ -117,11 +115,37 @@ route.get("/logout", async (req, res, next) => {
     return;
   }
 
+  res.clearCookie(process.env.SESSION_NAME);
+
   req.session.destroy(function (err) {
     console.log("logged out");
     respond(res, 200);
   });
   return;
+});
+
+route.get("/user", async (req, res, next) => {
+  // If session id is not present in the request, return early
+  if (!req.session?.uid) return respond(res, 200, undefined);
+
+  // If it is present, verify
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: req.session.uid,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        verified: true,
+      },
+    });
+    respond(res, 200, "logged-in user", user);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, ERROR.INTERNAL_ERROR);
+  }
 });
 
 route.get("/verify", async (req, res, next) => {});
