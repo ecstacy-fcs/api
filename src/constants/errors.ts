@@ -8,3 +8,5 @@ export const ACCESS_DENIED =
 export const SESSION_TIMEOUT = "session timeout";
 export const ACCOUNT_EXISTS = "Account already exists for email";
 export const ACCOUNT_NOT_FOUND = "User not found";
+export const PRODUCT_NOT_FOUND = "Invalid product ID";
+export const BAD_REQUEST = "Bad request";
