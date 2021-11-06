@@ -1,6 +1,7 @@
 import { User } from "@prisma/client";
 import { compare, genSalt, hash } from "bcrypt";
 import express from "express";
+import Joi from "joi";
 import * as ERROR from "src/constants/errors";
 import { respond } from "src/lib/request-respond";
 import * as email from "src/lib/validators/email";
@@ -13,20 +14,14 @@ const route = express();
 route.post("/register", async (req, res, next) => {
   const body: RegisterBody = req.body;
 
-  if (
-    !body.name ||
-    !body.email ||
-    !body.password ||
-    !email.validate(body.email)
-  ) {
-    console.log("invalid body type");
-    respond(res, 400, ERROR.BAD_INPUT);
-    return;
-  }
+  const { value, error } = Joi.object({
+    email: email.schema,
+    password: password.schema,
+    name: Joi.string().required().max(30),
+  }).validate(body);
 
-  if (!password.validate(body.password)) {
-    console.log("weak password");
-    respond(res, 400, ERROR.WEAK_PASSWORD);
+  if (error) {
+    respond(res, 400, `${ERROR.BAD_INPUT}: ${error.message}`);
     return;
   }
 
@@ -35,7 +30,7 @@ route.post("/register", async (req, res, next) => {
   try {
     user = await prisma.user.findUnique({
       where: {
-        email: body.email,
+        email: value.email,
       },
     });
 
@@ -45,12 +40,12 @@ route.post("/register", async (req, res, next) => {
     }
 
     const salt = await genSalt();
-    const hashedPassword = await hash(body.password, salt);
+    const hashedPassword = await hash(value.password, salt);
 
     user = await prisma.user.create({
       data: {
-        name: body.name,
-        email: body.email,
+        name: value.name,
+        email: value.email,
         password: hashedPassword,
         verified: true,
       },
@@ -66,10 +61,15 @@ route.post("/register", async (req, res, next) => {
 });
 
 route.post("/login", async (req, res, next) => {
-  // TODO: Session management, Verification system
   const body: LoginBody = req.body;
-  if (!body.email || !body.password || !email.validate(body.email)) {
-    respond(res, 400, ERROR.BAD_INPUT);
+
+  const { value, error } = Joi.object({
+    email: email.schema,
+    password: password.schema,
+  }).validate(body);
+
+  if (error) {
+    respond(res, 400, `${ERROR.BAD_INPUT}: ${error.message}`);
     return;
   }
 
@@ -78,7 +78,7 @@ route.post("/login", async (req, res, next) => {
   try {
     user = await prisma.user.findUnique({
       where: {
-        email: body.email,
+        email: value.email,
       },
     });
 
@@ -87,8 +87,8 @@ route.post("/login", async (req, res, next) => {
       return;
     }
 
-    if (!(await compare(body.password, user.password))) {
-      respond(res, 403, ERROR.BAD_INPUT);
+    if (!(await compare(value.password, user.password))) {
+      respond(res, 403, ERROR.WRONG_PASSWORD);
       return;
     }
 

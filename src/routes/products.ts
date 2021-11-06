@@ -1,5 +1,7 @@
-import { ACCESS_DENIED, INTERNAL_ERROR } from "src/constants/errors";
+import { Product } from "@prisma/client";
 import express from "express";
+import Joi from "joi";
+import { ACCESS_DENIED, BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 
@@ -9,10 +11,19 @@ route.get("/", async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
       include: {
-        category: true,
-        seller: true,
+        seller: {
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         images: true,
-        orders: true,
+        category: true,
       },
     });
     respond(res, 200, "all products", products);
@@ -24,31 +35,38 @@ route.get("/", async (req, res, next) => {
 
 route.post("/", async (req, res, next) => {
   const body = req.body;
+
+  const { value, error } = Joi.object({
+    name: Joi.string().max(28).required(),
+    description: Joi.string().max(124).required(),
+    price: Joi.number().positive().max(100000).min(1).required(),
+    category: Joi.string().required(),
+  }).validate(body);
+
+  if (error) {
+    respond(res, 400, `${BAD_INPUT}: ${error.message}`);
+    return;
+  }
+
   try {
-    const user = await prisma.seller.findUnique({
+    const seller = await prisma.seller.findUnique({
       where: {
         userId: req.session.uid,
       },
     });
 
-    if (!user) {
+    if (!seller) {
       respond(res, 403, ACCESS_DENIED);
       return;
     }
 
     const product = await prisma.product.create({
       data: {
-        name: body.name,
-        description: body.description,
-        price: body.price,
-        category: {
-          connect: {
-            id: body.category,
-          },
-        },
-        seller: {
-          connect: { id: user.id },
-        },
+        sellerId: seller.id,
+        name: value.name,
+        description: value.description,
+        price: value.price,
+        categoryId: value.category,
         images: {
           // handle this
         },
@@ -64,14 +82,21 @@ route.post("/", async (req, res, next) => {
 route.get("/:productId", async (req, res, next) => {
   try {
     const product = await prisma.product.findUnique({
-      where: {
-        id: req.params.productId,
-      },
+      where: { id: req.params.productId },
       include: {
-        category: true,
-        seller: true,
+        seller: {
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         images: true,
-        orders: true,
+        category: true,
       },
     });
     respond(res, 200, "success", product);
@@ -81,31 +106,43 @@ route.get("/:productId", async (req, res, next) => {
   }
 });
 
-route.put("/:productId", async (req, res, next) => {
+route.patch("/:productId", async (req, res, next) => {
   try {
-    const user =
+    const actor =
       (await prisma.seller.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
+        where: { userId: req.session.uid },
       })) ||
       (await prisma.admin.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
+        where: { userId: req.session.uid },
       }));
 
-    if (!user) {
+    if (!actor) {
       respond(res, 403, ACCESS_DENIED);
       return;
     }
-    const product = await prisma.product.update({
-      where: {
-        id: req.params.productId,
-      },
-      data: {
-        ...req.body,
-      },
+
+    let product: Product = await prisma.product.findUnique({
+      where: { id: req.params.productId },
+    });
+    if (!product) {
+      respond(res, 404);
+      return;
+    }
+
+    const { value, error } = Joi.object({
+      name: Joi.string().max(28).required(),
+      description: Joi.string().max(124).required(),
+      price: Joi.number().positive().max(100000).min(1).required(),
+      category: Joi.string().required(),
+    }).validate(req.body);
+    if (error) {
+      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
+      return;
+    }
+
+    product = await prisma.product.update({
+      where: { id: req.params.productId },
+      data: value,
     });
 
     respond(res, 200, "success", product);
@@ -117,24 +154,28 @@ route.put("/:productId", async (req, res, next) => {
 
 route.delete("/:productId", async (req, res, next) => {
   try {
-    const user =
+    const actor =
       (await prisma.seller.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
+        where: { userId: req.session.uid },
       })) ||
       (await prisma.admin.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
+        where: { userId: req.session.uid },
       }));
 
-    if (!user) {
+    if (!actor) {
       respond(res, 403, ACCESS_DENIED);
       return;
     }
 
-    const product = await prisma.product.delete({
+    const product: Product = await prisma.product.findUnique({
+      where: { id: req.params.productId },
+    });
+    if (!product) {
+      respond(res, 404);
+      return;
+    }
+
+    await prisma.product.delete({
       where: {
         id: req.params.productId,
       },
@@ -149,14 +190,14 @@ route.delete("/:productId", async (req, res, next) => {
 route.get("/category/:categoryId", async (req, res, next) => {
   try {
     const category = await prisma.productCategory.findUnique({
-      where: {
-        id: req.params.categoryId,
-      },
-      include: {
-        product: true,
-      },
+      where: { id: req.params.categoryId },
+      include: { products: true },
     });
-    respond(res, 200, "success", category.product);
+    if (!category) {
+      respond(res, 404);
+      return;
+    }
+    respond(res, 200, "success", category.products);
   } catch (err) {
     console.error(err);
     respond(res, 500, INTERNAL_ERROR);
@@ -166,13 +207,13 @@ route.get("/category/:categoryId", async (req, res, next) => {
 route.get("/seller/:sellerId", async (req, res, next) => {
   try {
     const seller = await prisma.seller.findUnique({
-      where: {
-        id: req.params.sellerId,
-      },
-      include: {
-        products: true,
-      },
+      where: { id: req.params.sellerId },
+      include: { products: true },
     });
+    if (!seller) {
+      respond(res, 404);
+      return;
+    }
     respond(res, 200, "success", seller.products);
   } catch (err) {
     console.error(err);

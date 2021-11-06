@@ -84,9 +84,9 @@ model ProductImage {
 }
 
 model ProductCategory {
-  id      String    @id @default(uuid())
-  name    String
-  product Product[]
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
 }
 
 model Orders {

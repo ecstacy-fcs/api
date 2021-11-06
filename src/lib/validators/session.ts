@@ -6,9 +6,7 @@ const idleTimeout = 3 * 60 * 60 * 1000;
 const absoluteTimeout = 2 * 24 * 60 * 60 * 1000;
 
 export default async function validate(req, res, next) {
-  console.log("inside sessionValidator", req.session.uid);
   if (req.session.uid === undefined || req.session.uid === null) {
-    console.log("inside uidcheck");
     next();
     return;
   }
