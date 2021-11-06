@@ -10,6 +10,7 @@ import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
 import payment from "./routes/payment"
+import products from "./routes/products";
 
 const app = express();
 
@@ -17,7 +18,8 @@ app.use(json());
 app.use(
   cors({
     origin: [process.env.CLIENT_ORIGIN],
-    methods: ["GET", "POST", "PATCH", "DELETE"],
+    methods: "*",
+    credentials: true,
   })
 );
 
@@ -31,8 +33,8 @@ app.use(
       secure: false,
     },
     name: process.env.SESSION_NAME,
-    resave: true,
-    saveUninitialized: true,
+    resave: false,
+    saveUninitialized: false,
     store: new PrismaSessionStore(prisma, {
       checkPeriod: 7 * 24 * 60 * 60 * 1000,
       dbRecordIdIsSessionId: true,
@@ -45,15 +47,11 @@ app.use(sessionValidator);
 
 app.use("/auth", auth);
 app.use("/buy", buy);
+app.use("/products", products);
 app.use("/payment", payment);
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
-});
-
-app.get("/users", async (req, res, next) => {
-  const users = await prisma.user.findMany();
-  respond(res, 200, "", users);
 });
 
 app.listen(process.env.PORT, () => {
