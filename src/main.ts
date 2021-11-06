@@ -9,6 +9,7 @@ import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
+import payment from "./routes/payment"
 import products from "./routes/products";
 
 const app = express();
@@ -44,13 +45,14 @@ app.use(
 app.use(sessionValidator);
 //idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000
 
-app.get("/", async (req, res, next) => {
-  respond(res, 200, "API Running");
-});
-
 app.use("/auth", auth);
 app.use("/buy", buy);
 app.use("/products", products);
+app.use("/payment", payment);
+
+app.get("/", async (req, res, next) => {
+  respond(res, 200, "API Running");
+});
 
 app.listen(process.env.PORT, () => {
   console.log("Listening on port", process.env.PORT);

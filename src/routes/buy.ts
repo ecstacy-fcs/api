@@ -12,7 +12,7 @@ route.post("/product/:productId", async (req, res, next) => {
       where: { userId: req.session.uid },
     });
 
-    const order = await prisma.order.create({
+    const order = await prisma.orders.create({
       data: {
         buyer: { connect: { id: buyer.id } },
         product: {
