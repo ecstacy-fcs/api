@@ -49,7 +49,7 @@ model Seller {
   id               String    @id @default(uuid())
   userId           String    @unique
   approved         Boolean   @default(false)
-  approvalDocument Bytes?    @db.MediumBlob
+  approvalDocument String?    
   user             User      @relation(fields: [userId], references: [id])
   products         Product[]
 }
@@ -58,7 +58,7 @@ model Buyer {
   id     String  @id @default(uuid())
   userId String  @unique
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders Order[]
+  orders Orders[]
 }
 
 model Product {
@@ -70,7 +70,7 @@ model Product {
   categoryId  String
   category    ProductCategory @relation(fields: [categoryId], references: [id])
   seller      Seller          @relation(fields: [sellerId], references: [id])
-  orders      Order[]
+  orders      Orders[]
   images      ProductImage[]
 
   @@index([categoryId, name])
@@ -89,14 +89,15 @@ model ProductCategory {
   product Product[]
 }
 
-model Order {
-  id        String   @id @default(uuid())
+model Orders {
+  id        String                @id @default(uuid())
   buyerId   String
   productId String
-  quantity  Int      @default(1)
-  time      DateTime @default(now())
-  buyer     Buyer    @relation(fields: [buyerId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int                   @default(1)
+  status    Boolean               @default(false)               
+  time      DateTime              @default(now())
+  buyer     Buyer                 @relation(fields: [buyerId], references: [id])
+  product   Product               @relation(fields: [productId], references: [id])
 }
 
 model Event {
