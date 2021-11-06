@@ -49,15 +49,15 @@ model Seller {
   id               String    @id @default(uuid())
   userId           String    @unique
   approved         Boolean   @default(false)
-  approvalDocument String?    
+  approvalDocument String?
   user             User      @relation(fields: [userId], references: [id])
   products         Product[]
 }
 
 model Buyer {
-  id     String  @id @default(uuid())
-  userId String  @unique
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String   @id @default(uuid())
+  userId String   @unique
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   orders Orders[]
 }
 
@@ -90,14 +90,14 @@ model ProductCategory {
 }
 
 model Orders {
-  id        String                @id @default(uuid())
+  id        String   @id @default(uuid())
   buyerId   String
   productId String
-  quantity  Int                   @default(1)
-  status    Boolean               @default(false)               
-  time      DateTime              @default(now())
-  buyer     Buyer                 @relation(fields: [buyerId], references: [id])
-  product   Product               @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  status    Boolean  @default(false)
+  time      DateTime @default(now())
+  buyer     Buyer    @relation(fields: [buyerId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
 }
 
 model Event {

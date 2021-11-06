@@ -1,8 +1,10 @@
 import { User } from "@prisma/client";
 import { compare, genSalt, hash } from "bcrypt";
+import dayjs from "dayjs";
 import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
+import { mail } from "src/lib/mail";
 import { respond } from "src/lib/request-respond";
 import * as email from "src/lib/validators/email";
 import * as password from "src/lib/validators/password";
@@ -47,7 +49,6 @@ route.post("/register", async (req, res, next) => {
         name: value.name,
         email: value.email,
         password: hashedPassword,
-        verified: true,
       },
     });
   } catch (exception) {
@@ -56,8 +57,29 @@ route.post("/register", async (req, res, next) => {
     return;
   }
 
-  //send verification mail
-  respond(res, 200, "Account registered");
+  // Create verification token
+  const verificationToken = await prisma.token.create({
+    data: { type: "EMAIL_VERIFICATION", userId: user.id },
+  });
+
+  const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${user.id}`;
+
+  // Send mail to user with verification token
+  await mail({
+    to: user.email,
+    subject: "Verify your email for Ecstacy",
+    html: `<h1>Welcome to Ecstacy!</h1>
+<p>Please verify your email before continuing your shopping!</p>
+<p><strong><a href="${verificationLink}">Click here</a></strong> or copy the following link and paste it in your browser:<br>
+<code>${verificationLink}</code>
+</p>`,
+  });
+
+  respond(
+    res,
+    200,
+    "Account registered, please check your mail to verify your account"
+  );
 });
 
 route.post("/login", async (req, res, next) => {
@@ -89,11 +111,6 @@ route.post("/login", async (req, res, next) => {
 
     if (!(await compare(value.password, user.password))) {
       respond(res, 403, ERROR.WRONG_PASSWORD);
-      return;
-    }
-
-    if (!user.verified) {
-      respond(res, 401, ERROR.UNVERIFIED_ACCOUNT);
       return;
     }
   } catch (exception) {
@@ -148,9 +165,88 @@ route.get("/user", async (req, res, next) => {
   }
 });
 
-route.get("/verify", async (req, res, next) => {});
+route.get("/verify", async (req, res, next) => {
+  const { token, userId } = req.query as { token: string; userId: string };
+  const { value, error } = Joi.object({
+    token: Joi.string().required(),
+    userId: Joi.string().required(),
+  }).validate({ token, userId });
+  if (error) {
+    respond(res, 400, ERROR.BAD_INPUT);
+    return;
+  }
+  const verificationToken = await prisma.token.findFirst({
+    where: {
+      id: value.token,
+      userId: value.userId,
+      type: "EMAIL_VERIFICATION",
+    },
+  });
+  // No such token
+  if (!verificationToken) {
+    respond(
+      res,
+      404,
+      "Could not find any verification token associated with this user or token"
+    );
+    return;
+  }
+  // Invalid token
+  if (!verificationToken.valid) {
+    respond(
+      res,
+      400,
+      "This link is no longer valid, please request a new link"
+    );
+    return;
+  }
+  // Expired token
+  if (dayjs().diff(verificationToken.createdAt, "hours") > 2) {
+    respond(res, 400, "This link has expired, please request a new one");
+    return;
+  }
+  // Good token
+  await prisma.token.update({
+    where: { id: value.token },
+    data: { valid: false },
+  });
+  await prisma.user.update({
+    where: { id: value.userId },
+    data: { verified: true },
+  });
+  res.redirect(`${process.env.CLIENT_ORIGIN}/auth/login?verified=true`);
+});
 
-route.post("/resend-verification-email", async (req, res, next) => {});
+route.post("/resend-verification-email", async (req, res, next) => {
+  if (!req.session?.uid) return respond(res, 200, undefined);
+  const { uid: userId } = req.session;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (user.verified) {
+    respond(res, 400, "User is already verified");
+    return;
+  }
+  // Invalidate all tokens first
+  await prisma.token.updateMany({
+    where: { userId, type: "EMAIL_VERIFICATION" },
+    data: { valid: false },
+  });
+  // Create a new token
+  const verificationToken = await prisma.token.create({
+    data: { type: "EMAIL_VERIFICATION", userId: user.id },
+  });
+  const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${user.id}`;
+  // Send mail to user with verification token
+  await mail({
+    to: user.email,
+    subject: "Verify your email for Ecstacy",
+    html: `<h1>Welcome to Ecstacy!</h1>
+<p>Please verify your email before continuing your shopping!</p>
+<p><strong><a href="${verificationLink}">Click here</a></strong> or copy the following link and paste it in your browser:<br>
+<code>${verificationLink}</code>
+</p>`,
+  });
+  respond(res, 200, "Verification email sent");
+});
 
 route.post("/forgot-password", async (req, res, next) => {});
 
