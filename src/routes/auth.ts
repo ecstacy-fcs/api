@@ -206,6 +206,7 @@ route.get("/verify", async (req, res, next) => {
     return;
   }
   // Good token
+  await prisma.buyer.create({ data: { userId } });
   await prisma.token.update({
     where: { id: value.token },
     data: { valid: false },
