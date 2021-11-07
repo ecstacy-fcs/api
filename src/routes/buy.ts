@@ -26,7 +26,7 @@ route.post("/product/:productId", async (req, res, next) => {
 
 route.get("/orders", async (req, res, next) => {
   try {
-    const orders = await prisma.order.findMany({
+    const orders = await prisma.orders.findMany({
       where: { buyer: { userId: req.session.uid } },
     });
     respond(res, 200, "success", orders);
