@@ -15,6 +15,8 @@ model User {
   address       String?
   phoneNumber   String?
   verified      Boolean @default(false)
+  adminId       String?
+  sellerId      String?
   adminProfile  Admin?
   buyerProfile  Buyer?
   sellerProfile Seller?

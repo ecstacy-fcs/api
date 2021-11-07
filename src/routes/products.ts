@@ -20,7 +20,8 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: "./src/uploads/product-images",
     filename: async (req, file, cb) => {
-      cb(null, `${uuidV4()}.pdf`);
+      const ext = file.mimetype.split("/")[1];
+      cb(null, `${uuidV4()}.${ext}`);
     },
   }),
 });
@@ -113,7 +114,15 @@ route.post(
   upload.array("product-image", 3),
   async (req: MulterRequest, res, next) => {
     console.log(req.files);
-    // const product = await prisma.product.update({});
+    req.files.forEach(async (file) => {
+      const img = await prisma.productImage.create({
+        data: {
+          path: file.filename,
+          productId: req.params.productId,
+        },
+      });
+    });
+    respond(res, 200, "success");
   }
 );
 
