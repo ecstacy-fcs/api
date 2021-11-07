@@ -45,7 +45,7 @@ route.post(
       });
 
       const body = {
-        amount: product.price,
+        amount: product.price * 100, //razorpay processess amount in Paise
         currency: "INR",
         accept_partial: false,
         expire_by: Date.now() / 1000 + 60 * 20 | 0, 

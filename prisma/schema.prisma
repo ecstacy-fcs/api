@@ -17,6 +17,7 @@ model User {
   verified      Boolean @default(false)
   adminId       String?
   sellerId      String?
+  deleted       Boolean @default(false)
   adminProfile  Admin?
   buyerProfile  Buyer?
   sellerProfile Seller?
@@ -31,12 +32,12 @@ model Session {
 }
 
 model Token {
-  id        String    @id @default(uuid())
+  id        String     @id @default(uuid())
   userId    String
-  valid     Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  type      TokenType
-  user      User      @relation(fields: [userId], references: [id])
+  valid     Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  type      Token_type
+  user      User       @relation(fields: [userId], references: [id])
 
   @@index([userId], map: "Token_userId_fkey")
 }
@@ -114,7 +115,8 @@ model Event {
   type String
 }
 
-enum TokenType {
+enum Token_type {
   EMAIL_VERIFICATION
   FORGOT_PASSWORD
+  DELETE_ACCOUNT
 }
