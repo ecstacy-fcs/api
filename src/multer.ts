@@ -1,9 +1,11 @@
-import { Request, Express } from "express";
-import multer, { Multer } from "multer";
+import { Request } from "express";
+import multer from "multer";
+
+const upload = multer({ dest: "uploads/" });
 
 export interface MulterRequest extends Request {
   file: any;
   files: any[];
 }
 
-export default multer;
+export default upload;

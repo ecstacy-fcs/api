@@ -4,7 +4,6 @@ import { INTERNAL_ERROR } from "src/constants/errors";
 import prisma from "src/prisma";
 import { MulterRequest } from "src/multer";
 import multer, { Multer } from "multer";
-import { shouldParseRequest } from "src/main";
 import { v4 as uuidv4 } from "uuid";
 
 const upload = multer({
@@ -30,7 +29,35 @@ interface ProductBody {
 
 // route.use(upload.single("proposal"));
 
-route.get("/proposals", async (req, res, next) => {});
+route.get("/", async (req, res, next) => {
+  if (!req.session.uid) {
+    respond(res, 403, "user not logged in ");
+    return;
+  }
+  try {
+    const seller = await prisma.seller.findUnique({
+      where: {
+        userId: req.session.uid,
+      },
+      include: {
+        products: true,
+      },
+    });
+
+    if (!seller) {
+      respond(res, 401, "no seller profile exists");
+      return;
+    }
+    respond(res, 200, "success", seller);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, INTERNAL_ERROR);
+  }
+});
+
+route.get("/proposals", async (req, res, next) => {
+  // get all seller proposals
+});
 
 route.post(
   "/proposal",
@@ -47,7 +74,8 @@ route.post(
   }
 );
 
-route.delete("/proposal", async (req, res, next) => {});
-route.put("/proposal", async (req, res, next) => {});
+route.put("/proposal", async (req, res, next) => {
+  // approve or reject a proposal
+});
 
 export default route;

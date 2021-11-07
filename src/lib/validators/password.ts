@@ -1,3 +1,5 @@
+import Joi from "joi";
+
 /**
  * At least 1 lower case letter
  * At least 1 upper case letter
@@ -9,5 +11,4 @@
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,22}$/;
 
-export const validate = (password: string): boolean =>
-  PASSWORD_REGEX.test(password);
+export const schema = Joi.string().trim().pattern(PASSWORD_REGEX).required();

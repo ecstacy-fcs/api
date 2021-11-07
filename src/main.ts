@@ -4,17 +4,22 @@ import cors from "cors";
 import "dotenv/config";
 import express, { Request } from "express";
 import session from "express-session";
+import { isBuyer, isUser, isUserVerified } from "./lib/middlewares";
 import { respond } from "./lib/request-respond";
 import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
-import sell from "./routes/sell";
+import payment from "./routes/payment";
 import products from "./routes/products";
 
 const app = express();
 
 const parseJSON = json({ limit: "1mb" });
+
+// don't pass request as JSON for this route
+export const shouldParseRequest = (req: Request) =>
+  !(req.url === "/proposal" && req.method === "POST");
 
 app.use((req, res, next) =>
   shouldParseRequest(req) ? parseJSON(req, res, next) : next()
@@ -53,18 +58,14 @@ app.use(
 app.use(sessionValidator);
 //idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000
 
-// don't pass request as JSON for this route
-export const shouldParseRequest = (req: Request) =>
-  !(req.url === "/proposal" && req.method === "POST");
+app.use("/auth", auth);
+app.use("/products", products);
+app.use("/buy", isUser, isUserVerified, isBuyer, buy);
+app.use("/payment", payment);
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
 });
-
-app.use("/auth", auth);
-app.use("/buy", buy);
-app.use("/sell", sell);
-app.use("/products", products);
 
 app.listen(process.env.PORT, () => {
   console.log("Listening on port", process.env.PORT);

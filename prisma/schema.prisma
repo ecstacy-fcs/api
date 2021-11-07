@@ -37,6 +37,8 @@ model Token {
   createdAt DateTime  @default(now())
   type      TokenType
   user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "Token_userId_fkey")
 }
 
 model Admin {
@@ -55,10 +57,10 @@ model Seller {
 }
 
 model Buyer {
-  id     String  @id @default(uuid())
-  userId String  @unique
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders Order[]
+  id     String   @id @default(uuid())
+  userId String   @unique
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Orders[]
 }
 
 model Product {
@@ -70,34 +72,40 @@ model Product {
   categoryId  String
   category    ProductCategory @relation(fields: [categoryId], references: [id])
   seller      Seller          @relation(fields: [sellerId], references: [id])
-  orders      Order[]
+  orders      Orders[]
   images      ProductImage[]
 
   @@index([categoryId, name])
+  @@index([sellerId], map: "Product_sellerId_fkey")
 }
 
 model ProductImage {
   id        String  @id @default(uuid())
-  filePath  String
+  path      String
   productId String
   product   Product @relation(fields: [productId], references: [id])
+
+  @@index([productId], map: "ProductImage_productId_fkey")
 }
 
 model ProductCategory {
-  id      String    @id @default(uuid())
-  name    String
-  product Product[]
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
 }
 
-model Order {
-  id        String                @id @default(uuid())
+model Orders {
+  id        String   @id @default(uuid())
   buyerId   String
   productId String
-  quantity  Int                   @default(1)
-  time      DateTime              @default(now())
-  status    Boolean               @default(false)
-  buyer     Buyer                 @relation(fields: [buyerId], references: [id])
-  product   Product               @relation(fields: [productId], references: [id])
+  quantity  Int      @default(1)
+  status    Boolean  @default(false)
+  time      DateTime @default(now())
+  buyer     Buyer    @relation(fields: [buyerId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([buyerId], map: "Orders_buyerId_fkey")
+  @@index([productId], map: "Orders_productId_fkey")
 }
 
 model Event {

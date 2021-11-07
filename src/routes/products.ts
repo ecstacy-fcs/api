@@ -1,18 +1,56 @@
-import { ACCESS_DENIED, INTERNAL_ERROR } from "src/constants/errors";
+import { Product } from "@prisma/client";
 import express from "express";
+import Joi from "joi";
+import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
+import {
+  isApprovedSellerOrAdmin,
+  isUser,
+  isUserVerified,
+} from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
+import multer from "multer";
+import { MulterRequest } from "src/multer";
+import { v4 as uuidV4 } from "uuid";
+
+const upload = multer({
+  limits: {
+    fileSize: 1000000,
+  },
+  storage: multer.diskStorage({
+    destination: "./src/uploads/product-images",
+    filename: async (req, file, cb) => {
+      cb(null, `${uuidV4()}.pdf`);
+    },
+  }),
+});
 
 const route = express();
+
+const productSchema = Joi.object({
+  name: Joi.string().trim().max(28).required(),
+  description: Joi.string().trim().max(124).required(),
+  price: Joi.number().positive().max(100000).min(1).required(),
+  category: Joi.string().trim().required(),
+});
 
 route.get("/", async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
       include: {
-        category: true,
-        seller: true,
+        seller: {
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         images: true,
-        orders: true,
+        category: true,
       },
     });
     respond(res, 200, "all products", products);
@@ -22,56 +60,68 @@ route.get("/", async (req, res, next) => {
   }
 });
 
-route.post("/", async (req, res, next) => {
-  const body = req.body;
-  try {
-    const user = await prisma.seller.findUnique({
-      where: {
-        userId: req.session.uid,
-      },
+route.post(
+  "/",
+  isUser,
+  isUserVerified,
+  isApprovedSellerOrAdmin,
+  async (req: any, res, next) => {
+    const { value, error } = productSchema.validate(req.body, {
+      convert: true,
     });
-
-    if (!user) {
-      respond(res, 403, ACCESS_DENIED);
+    if (error) {
+      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
       return;
     }
 
-    const product = await prisma.product.create({
-      data: {
-        name: body.name,
-        description: body.description,
-        price: body.price,
-        category: {
-          connect: {
-            id: body.category,
+    try {
+      const product = await prisma.product.create({
+        data: {
+          sellerId: req.user.sellerId,
+          name: value.name,
+          description: value.description,
+          price: value.price,
+          categoryId: value.category,
+          images: {
+            // handle this
           },
         },
-        seller: {
-          connect: { id: user.id },
-        },
-        images: {
-          // handle this
-        },
-      },
-    });
-    respond(res, 200, "success", product);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+      });
+      respond(res, 200, "success", product);
+    } catch (err) {
+      console.error(err);
+      respond(res, 500, INTERNAL_ERROR);
+    }
   }
-});
+);
+
+route.post(
+  "/:productId/images",
+  upload.array("product-image", 3),
+  async (req: MulterRequest, res, next) => {
+    console.log(req.files);
+    // const product = await prisma.product.update({});
+  }
+);
 
 route.get("/:productId", async (req, res, next) => {
   try {
     const product = await prisma.product.findUnique({
-      where: {
-        id: req.params.productId,
-      },
+      where: { id: req.params.productId },
       include: {
-        category: true,
-        seller: true,
+        seller: {
+          select: {
+            id: true,
+            userId: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
         images: true,
-        orders: true,
+        category: true,
       },
     });
     respond(res, 200, "success", product);
@@ -81,82 +131,91 @@ route.get("/:productId", async (req, res, next) => {
   }
 });
 
-route.put("/:productId", async (req, res, next) => {
-  try {
-    const user =
-      (await prisma.seller.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
-      })) ||
-      (await prisma.admin.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
-      }));
-
-    if (!user) {
-      respond(res, 403, ACCESS_DENIED);
+route.patch(
+  "/:productId",
+  isUser,
+  isUserVerified,
+  isApprovedSellerOrAdmin,
+  async (req, res, next) => {
+    const { value, error } = productSchema.validate(req.body, {
+      convert: true,
+    });
+    if (error) {
+      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
       return;
     }
-    const product = await prisma.product.update({
-      where: {
-        id: req.params.productId,
-      },
-      data: {
-        ...req.body,
-      },
-    });
-
-    respond(res, 200, "success", product);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
-  }
-});
-
-route.delete("/:productId", async (req, res, next) => {
-  try {
-    const user =
-      (await prisma.seller.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
-      })) ||
-      (await prisma.admin.findUnique({
-        where: {
-          userId: req.session.uid,
-        },
-      }));
-
-    if (!user) {
-      respond(res, 403, ACCESS_DENIED);
-      return;
+    try {
+      let product: Product = await prisma.product.findUnique({
+        where: { id: req.params.productId },
+      });
+      if (!product) {
+        respond(res, 404);
+        return;
+      }
+      product = await prisma.product.update({
+        where: { id: req.params.productId },
+        data: value,
+      });
+      respond(res, 200, "success", product);
+    } catch (err) {
+      console.error(err);
+      respond(res, 500, INTERNAL_ERROR);
     }
-
-    const product = await prisma.product.delete({
-      where: {
-        id: req.params.productId,
-      },
-    });
-    respond(res, 200, "success");
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
   }
-});
+);
+
+route.delete(
+  "/:productId",
+  isUser,
+  isUserVerified,
+  isApprovedSellerOrAdmin,
+  async (req, res, next) => {
+    try {
+      const product: Product = await prisma.product.findUnique({
+        where: { id: req.params.productId },
+      });
+      if (!product) {
+        respond(res, 404);
+        return;
+      }
+      await prisma.product.delete({
+        where: { id: req.params.productId },
+      });
+      respond(res, 200, "success");
+    } catch (err) {
+      console.error(err);
+      respond(res, 500, INTERNAL_ERROR);
+    }
+  }
+);
 
 route.get("/category/:categoryId", async (req, res, next) => {
   try {
     const category = await prisma.productCategory.findUnique({
-      where: {
-        id: req.params.categoryId,
-      },
+      where: { id: req.params.categoryId },
       include: {
-        product: true,
+        products: {
+          include: {
+            seller: {
+              select: {
+                id: true,
+                userId: true,
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
-    respond(res, 200, "success", category.product);
+    if (!category) {
+      respond(res, 404);
+      return;
+    }
+    respond(res, 200, "success", category.products);
   } catch (err) {
     console.error(err);
     respond(res, 500, INTERNAL_ERROR);
@@ -166,13 +225,29 @@ route.get("/category/:categoryId", async (req, res, next) => {
 route.get("/seller/:sellerId", async (req, res, next) => {
   try {
     const seller = await prisma.seller.findUnique({
-      where: {
-        id: req.params.sellerId,
-      },
+      where: { id: req.params.sellerId },
       include: {
-        products: true,
+        products: {
+          include: {
+            seller: {
+              select: {
+                id: true,
+                userId: true,
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
+    if (!seller) {
+      respond(res, 404);
+      return;
+    }
     respond(res, 200, "success", seller.products);
   } catch (err) {
     console.error(err);
