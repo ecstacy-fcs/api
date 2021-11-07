@@ -46,7 +46,7 @@ route.get(
         amount: product.price,
         currency: "INR",
         accept_partial: false,
-        expire_by: Date.now() / 1000 + 60 * 20,
+        expire_by: Date.now() / 1000 + 60 * 20 | 0, 
         reference_id: order.id,
         description: `Payment for 1 ${product.name}`,
         customer: {
@@ -72,6 +72,7 @@ route.get(
       );
       respond(res, 200, "Payment Link", response.data.short_url);
     } catch (exception) {
+      console.log(exception)
       respond(res, 500, ERROR.INTERNAL_ERROR);
       return;
     }
