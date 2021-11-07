@@ -4,12 +4,13 @@ import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import session from "express-session";
+import { isBuyer, isUser, isUserVerified } from "./lib/middlewares";
 import { respond } from "./lib/request-respond";
 import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
-import payment from "./routes/payment"
+import payment from "./routes/payment";
 import products from "./routes/products";
 
 const app = express();
@@ -46,8 +47,8 @@ app.use(sessionValidator);
 //idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000
 
 app.use("/auth", auth);
-app.use("/buy", buy);
 app.use("/products", products);
+app.use("/buy", isUser, isUserVerified, isBuyer, buy);
 app.use("/payment", payment);
 
 app.get("/", async (req, res, next) => {

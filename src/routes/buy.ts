@@ -4,15 +4,12 @@ import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 const route = express();
 
-route.post("/product/:productId", async (req, res, next) => {
+route.post("/product/:productId", async (req: any, res, next) => {
   const { productId } = req.params;
   try {
-    const buyer = await prisma.buyer.findUnique({
-      where: { userId: req.session.uid },
-    });
     const order = await prisma.orders.create({
       data: {
-        buyerId: buyer.id,
+        buyerId: req.user.buyerProfile.id,
         productId: productId,
       },
     });
@@ -24,10 +21,10 @@ route.post("/product/:productId", async (req, res, next) => {
   }
 });
 
-route.get("/orders", async (req, res, next) => {
+route.get("/orders", async (req: any, res, next) => {
   try {
     const orders = await prisma.orders.findMany({
-      where: { buyer: { userId: req.session.uid } },
+      where: { buyer: { userId: req.user.id } },
     });
     respond(res, 200, "success", orders);
   } catch (err) {
