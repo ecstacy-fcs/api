@@ -9,7 +9,7 @@ import prisma from "src/prisma";
 
 const route = express();
 
-route.get(
+route.post(
   "/pay",
   isUser,
   isUserVerified,
@@ -19,10 +19,12 @@ route.get(
       pid: Joi.string().trim().required(),
     }).validate(req.body, { convert: true });
     if (error) {
+      console.log(error)
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }
 
+    console.log('here')
     const { pid: productId } = value;
 
     try {
@@ -79,7 +81,7 @@ route.get(
   }
 );
 
-route.get(
+route.post(
   "/validate",
   isUser,
   isUserVerified,
@@ -91,6 +93,7 @@ route.get(
       orderId: Joi.string().trim().required(),
     }).validate(req.body, { convert: true });
     if (error) {
+      console.log(error)
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }
