@@ -41,12 +41,10 @@ route.post("/register", async (req: any, res, next) => {
 
   try {
     user = await prisma.user.findUnique({
-      where: {
-        email: value.email,
-      },
+      where: { email: value.email },
     });
 
-    if (user) {
+    if (user && !user.deleted) {
       respond(res, 400, ERROR.ACCOUNT_EXISTS);
       return;
     }
@@ -123,9 +121,7 @@ route.post("/login", async (req: any, res, next) => {
 
   try {
     user = await prisma.user.findUnique({
-      where: {
-        email: value.email,
-      },
+      where: { email: value.email },
     });
 
     if (!user) {
@@ -135,6 +131,15 @@ route.post("/login", async (req: any, res, next) => {
 
     if (!(await compare(value.password, user.password))) {
       respond(res, 403, ERROR.WRONG_PASSWORD);
+      return;
+    }
+
+    if (user.deleted) {
+      respond(
+        res,
+        404,
+        "Account deleted. Register again with the same email ID to activate it."
+      );
       return;
     }
   } catch (exception) {
@@ -252,15 +257,16 @@ route.post("/forgot-password", async (req: any, res, next) => {
     return;
   }
   const { value, error } = Joi.object({ email: email.schema }).validate(
-    req.body
+    req.body,
+    { convert: true }
   );
   if (error) {
     respond(res, 400, ERROR.BAD_INPUT);
     return;
   }
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: value.email },
+    const user = await prisma.user.findFirst({
+      where: { email: value.email, deleted: false },
     });
     if (!user) {
       respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
@@ -314,7 +320,7 @@ route.post("/update-password", async (req: any, res, next) => {
   const { value, error } = Joi.object({
     otp: Joi.string().trim().required(),
     password: password.schema,
-  }).validate(req.body);
+  }).validate(req.body, { convert: true });
   if (error) {
     respond(res, 400, ERROR.BAD_INPUT);
     return;
@@ -351,7 +357,7 @@ route.post("/update-password", async (req: any, res, next) => {
 
 export default route;
 
-const verifyToken = (token: Token, res: any): boolean => {
+export const verifyToken = (token: Token, res: any): boolean => {
   // No such token
   if (!token) {
     respond(

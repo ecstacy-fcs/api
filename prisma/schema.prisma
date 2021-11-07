@@ -15,13 +15,11 @@ model User {
   address       String?
   phoneNumber   String?
   verified      Boolean @default(false)
-  adminId       String?
-  sellerId      String?
-  deleted       Boolean @default(false)
   adminProfile  Admin?
   buyerProfile  Buyer?
   sellerProfile Seller?
   tokens        Token[]
+  deleted       Boolean @default(false)
 }
 
 model Session {
@@ -72,7 +70,7 @@ model Product {
   sellerId    String
   categoryId  String
   category    ProductCategory @relation(fields: [categoryId], references: [id])
-  seller      Seller          @relation(fields: [sellerId], references: [id])
+  seller      Seller          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   orders      Orders[]
   images      ProductImage[]
 
@@ -84,7 +82,7 @@ model ProductImage {
   id        String  @id @default(uuid())
   productId String
   path      String
-  product   Product @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId], map: "ProductImage_productId_fkey")
 }
@@ -103,7 +101,7 @@ model Orders {
   status    Boolean  @default(false)
   time      DateTime @default(now())
   buyer     Buyer    @relation(fields: [buyerId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([buyerId], map: "Orders_buyerId_fkey")
   @@index([productId], map: "Orders_productId_fkey")

@@ -47,7 +47,7 @@ export default async function validate(req, res, next) {
     where: { id: req.session.uid },
     include: { adminProfile: true, buyerProfile: true, sellerProfile: true },
   });
-  if (!user) {
+  if (!user || user.deleted) {
     // Delete invalid session
     await prisma.session.delete({
       where: { sid: req.sessionID },

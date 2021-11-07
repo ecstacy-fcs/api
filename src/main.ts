@@ -4,7 +4,6 @@ import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import session from "express-session";
-import { isBuyer, isUser, isUserVerified } from "./lib/middlewares";
 import { respond } from "./lib/request-respond";
 import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
@@ -12,8 +11,9 @@ import auth from "./routes/auth";
 import buy from "./routes/buy";
 import payment from "./routes/payment";
 import products from "./routes/products";
-import seller from "./routes/sellers";
 import search from "./routes/search";
+import seller from "./routes/sellers";
+import user from "./routes/user";
 
 const app = express();
 
@@ -50,10 +50,11 @@ app.use(sessionValidator);
 
 app.use("/auth", auth);
 app.use("/products", products);
-app.use("/buy", isUser, isUserVerified, isBuyer, buy);
+app.use("/buy", buy);
 app.use("/payment", payment);
-app.use('/sellers',seller);
-app.use('/search', search)
+app.use("/sellers", seller);
+app.use("/search", search);
+app.use("/users", user);
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
