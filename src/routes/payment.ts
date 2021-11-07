@@ -3,7 +3,12 @@ import crypto from "crypto";
 import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
-import { isBuyer, isUser, isUserVerified } from "src/lib/middlewares";
+import {
+  isBuyer,
+  isNotDeleted,
+  isUser,
+  isUserVerified,
+} from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 
@@ -12,6 +17,7 @@ const route = express();
 route.post(
   "/pay",
   isUser,
+  isNotDeleted,
   isUserVerified,
   isBuyer,
   async (req: any, res, next) => {
@@ -48,7 +54,7 @@ route.post(
         amount: product.price * 100, //razorpay processess amount in Paise
         currency: "INR",
         accept_partial: false,
-        expire_by: Date.now() / 1000 + 60 * 20 | 0, 
+        expire_by: (Date.now() / 1000 + 60 * 20) | 0,
         reference_id: order.id,
         description: `Payment for 1 ${product.name}`,
         customer: {
@@ -74,7 +80,7 @@ route.post(
       );
       respond(res, 200, "Payment Link", response.data.short_url);
     } catch (exception) {
-      console.log(exception)
+      console.log(exception);
       respond(res, 500, ERROR.INTERNAL_ERROR);
       return;
     }
@@ -84,6 +90,7 @@ route.post(
 route.post(
   "/validate",
   isUser,
+  isNotDeleted,
   isUserVerified,
   isBuyer,
   async (req, res, next) => {

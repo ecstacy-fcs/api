@@ -41,12 +41,10 @@ route.post("/register", async (req: any, res, next) => {
 
   try {
     user = await prisma.user.findUnique({
-      where: {
-        email: value.email,
-      },
+      where: { email: value.email },
     });
 
-    if (user) {
+    if (user && !user.deleted) {
       respond(res, 400, ERROR.ACCOUNT_EXISTS);
       return;
     }
@@ -54,13 +52,25 @@ route.post("/register", async (req: any, res, next) => {
     const salt = await genSalt();
     const hashedPassword = await hash(value.password, salt);
 
-    user = await prisma.user.create({
-      data: {
-        name: value.name,
-        email: value.email,
-        password: hashedPassword,
-      },
-    });
+    if (user) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          name: value.name,
+          password: hashedPassword,
+          deleted: false,
+          verified: false,
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name: value.name,
+          email: value.email,
+          password: hashedPassword,
+        },
+      });
+    }
   } catch (exception) {
     console.log(exception);
     respond(res, 500, ERROR.INTERNAL_ERROR);
@@ -123,9 +133,7 @@ route.post("/login", async (req: any, res, next) => {
 
   try {
     user = await prisma.user.findUnique({
-      where: {
-        email: value.email,
-      },
+      where: { email: value.email },
     });
 
     if (!user) {
@@ -135,6 +143,15 @@ route.post("/login", async (req: any, res, next) => {
 
     if (!(await compare(value.password, user.password))) {
       respond(res, 403, ERROR.WRONG_PASSWORD);
+      return;
+    }
+
+    if (user.deleted) {
+      respond(
+        res,
+        404,
+        "Account deleted. Register again with the same email ID to activate it."
+      );
       return;
     }
   } catch (exception) {
@@ -150,13 +167,10 @@ route.post("/login", async (req: any, res, next) => {
   respond(res, 200);
 });
 
-route.get("/logout", async (req: any, res, next) => {
-  if (!req.user) {
-    respond(res, 400, "You need to login to logout");
-    return;
-  }
-  res.clearCookie(process.env.SESSION_NAME);
-  req.session.destroy(() => respond(res, 200));
+route.get("/logout", isUser, async (req: any, res, next) => {
+  req.session.destroy(() =>
+    respond(res.clearCookie(process.env.SESSION_NAME), 200)
+  );
   return;
 });
 
@@ -187,10 +201,12 @@ route.get("/verify", async (req, res, next) => {
         userId: value.userId,
         type: "EMAIL_VERIFICATION",
       },
+      include: { user: { include: { buyerProfile: true } } },
     });
     if (!verifyToken(verificationToken, res)) return;
     // Good token
-    await prisma.buyer.create({ data: { userId } });
+    if (!verificationToken.user.buyerProfile)
+      await prisma.buyer.create({ data: { userId } });
     await prisma.token.update({
       where: { id: value.token },
       data: { valid: false },
@@ -214,13 +230,22 @@ route.post(
       return;
     }
     try {
-      // Invalidate all tokens first
-      await prisma.token.updateMany({
-        where: { userId: req.user.id, type: "EMAIL_VERIFICATION" },
-        data: { valid: false },
+      let verificationToken = await prisma.token.findFirst({
+        where: {
+          userId: req.user.id,
+          type: "EMAIL_VERIFICATION",
+          valid: true,
+          createdAt: {
+            gt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          },
+        },
       });
+      if (verificationToken) {
+        respond(res, 400, "Verification token already sent to email!");
+        return;
+      }
       // Create a new token
-      const verificationToken = await prisma.token.create({
+      verificationToken = await prisma.token.create({
         data: { type: "EMAIL_VERIFICATION", userId: req.user.id },
       });
       const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${req.user.id}`;
@@ -252,15 +277,16 @@ route.post("/forgot-password", async (req: any, res, next) => {
     return;
   }
   const { value, error } = Joi.object({ email: email.schema }).validate(
-    req.body
+    req.body,
+    { convert: true }
   );
   if (error) {
     respond(res, 400, ERROR.BAD_INPUT);
     return;
   }
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: value.email },
+    const user = await prisma.user.findFirst({
+      where: { email: value.email, deleted: false },
     });
     if (!user) {
       respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
@@ -314,7 +340,7 @@ route.post("/update-password", async (req: any, res, next) => {
   const { value, error } = Joi.object({
     otp: Joi.string().trim().required(),
     password: password.schema,
-  }).validate(req.body);
+  }).validate(req.body, { convert: true });
   if (error) {
     respond(res, 400, ERROR.BAD_INPUT);
     return;
@@ -351,7 +377,7 @@ route.post("/update-password", async (req: any, res, next) => {
 
 export default route;
 
-const verifyToken = (token: Token, res: any): boolean => {
+export const verifyToken = (token: Token, res: any): boolean => {
   // No such token
   if (!token) {
     respond(
