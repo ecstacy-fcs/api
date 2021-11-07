@@ -9,7 +9,7 @@ import prisma from "src/prisma";
 
 const route = express();
 
-route.get(
+route.post(
   "/pay",
   isUser,
   isUserVerified,
@@ -79,7 +79,7 @@ route.get(
   }
 );
 
-route.get(
+route.post(
   "/validate",
   isUser,
   isUserVerified,

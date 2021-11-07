@@ -52,8 +52,9 @@ export default async function validate(req, res, next) {
     await prisma.session.delete({
       where: { sid: req.sessionID },
     });
-    res.clearCookie(process.env.SESSION_NAME);
-    req.session.destroy(() => respond(res, 400));
+    req.session.destroy(() => {
+      res.clearCookie(process.env.SESSION_NAME);
+    });
     return;
   }
 
