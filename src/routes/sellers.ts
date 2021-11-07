@@ -3,51 +3,12 @@ import express from "express";
 import adminValidator from 'src/lib/validators/admin'
 import { respond } from "src/lib/request-respond";
 import * as ERROR from 'src/constants/errors'
+import { isAdmin, isUser, isUserVerified } from "src/lib/middlewares";
 
 const route = express();
 
-// route.use(adminValidator);
 
-route.get('/users', async (req, res, next) => {
-    try{
-        const users = await prisma.user.findMany({
-            where:{
-                verified: req.query.verified === undefined ? true : req.query.verified==='true'
-            },
-            select:{
-                name: true,
-                email: true
-            }
-        })
-        respond(res,200,null,users);
-    }catch(error){
-        respond(res,500,ERROR.INTERNAL_ERROR);
-    }
-});
-
-route.get('/users/:id',async (req, res, next) => {
-    try{
-        const user = await prisma.user.findUnique({
-            where:{
-                id: req.params.id
-            },
-            select:{
-                name: true,
-                email: true
-            }
-        })
-        if(!user){
-            respond(res,404,ERROR.ACCOUNT_NOT_FOUND);
-        }else{
-            respond(res,200,null,user);
-        }
-        return
-    }catch(error){
-        respond(res,500,ERROR.INTERNAL_ERROR);
-    }
-});
-
-route.get('/sellers',async (req, res, next) => {
+route.get('/', isUser, isUserVerified, isAdmin, async (req, res, next) => {
     try{
         const sellers = await prisma.seller.findMany({
             where:{
@@ -72,7 +33,7 @@ route.get('/sellers',async (req, res, next) => {
 })
 
 
-route.get('/sellers/:id', async (req, res, next) => {
+route.get('/:id', isUser, isUserVerified, isAdmin, async (req, res, next) => {
     try{
         const seller = await prisma.seller.findUnique({
             where:{
@@ -89,14 +50,14 @@ route.get('/sellers/:id', async (req, res, next) => {
     }
 })
 
-route.post('/sellers/:id', async (req, res, next) => {
+route.patch('/:id/approve', isUser, isUserVerified, isAdmin, async (req, res, next) => {
     try{
         const seller = await prisma.seller.update({
             where:{
                 id: req.params.id
             },
             data:{
-                approved: req.body.approved
+                approved: true
             }
         });
         respond(res,200);
@@ -110,7 +71,22 @@ route.post('/sellers/:id', async (req, res, next) => {
     }
 })
 
-route.post("/restrict-user", async (req, res, next) => {});
-
+route.delete('/:id', isUser, isUserVerified, isAdmin, async (req, res, next) => {
+    try{
+        const seller = await prisma.seller.delete({
+            where:{
+                id: req.params.id
+            }
+        });
+        respond(res,200);
+    }catch(error){
+        //Record not found
+        if(error.code === 'P2025'){
+            respond(res,404,ERROR.ACCOUNT_NOT_FOUND);
+        }else{
+            respond(res,500,ERROR.INTERNAL_ERROR);
+        }
+    }
+})
 
 export default route;
