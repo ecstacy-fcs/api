@@ -36,7 +36,7 @@ route.get(
 
       const order = await prisma.orders.create({
         data: {
-          buyerId: req.user.buyerId,
+          buyerId: req.user.buyerProfile.id,
           productId: product.id,
           quantity: 1,
         },
