@@ -6,9 +6,12 @@ import {
   BAD_INPUT,
   INTERNAL_ERROR,
 } from "src/constants/errors";
+import { mail } from "src/lib/mail";
 import {
   isAdmin,
   isNotDeleted,
+  isUser,
+  isUserVerified,
   isVerifiedUserOrAdmin,
 } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
@@ -74,7 +77,7 @@ route.patch(
   async (req: any, res, next) => {
     const { value, error } = Joi.object({
       name: Joi.string().trim().max(30).required(),
-      phoneNumber: Joi.string().trim().length(10).optional(),
+      phoneNumber: Joi.string().trim().pattern(/\d*/).length(10).optional(),
       address: Joi.string().trim().max(100).optional(),
     }).validate(req.body, { convert: true });
     if (error) {
@@ -132,7 +135,7 @@ route.delete(
           respond(res, 404, ACCOUNT_NOT_FOUND);
           return;
         }
-        if (user.adminProfile) {
+        if (req.user.adminProfile) {
           respond(res, 400, "Admin user cannot be deleted");
           return;
         }
@@ -161,9 +164,66 @@ route.delete(
           data: { deleted: true },
         });
         respond(res, 200, "Account deleted");
+        return;
       }
       respond(res, 403, ACCESS_DENIED);
       return;
+    } catch (err) {
+      console.log(err);
+      respond(res, 500, INTERNAL_ERROR);
+    }
+  }
+);
+
+route.post(
+  "/request-delete",
+  isUser,
+  isUserVerified,
+  isNotDeleted,
+  async (req: any, res, next) => {
+    try {
+      // Check if valid verification token already exists and sent
+      let verificationToken = await prisma.token.findFirst({
+        where: {
+          userId: req.user.id,
+          type: "DELETE_ACCOUNT",
+          valid: true,
+          createdAt: {
+            gt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          },
+        },
+      });
+      if (verificationToken) {
+        respond(res, 400, "Verification token already sent to email!");
+        return;
+      }
+      await prisma.token.updateMany({
+        where: {
+          userId: req.user.id,
+          type: "DELETE_ACCOUNT",
+        },
+        data: { valid: false },
+      });
+      verificationToken = await prisma.token.create({
+        data: {
+          userId: req.user.id,
+          type: "DELETE_ACCOUNT",
+        },
+      });
+      try {
+        await mail({
+          to: req.user.email,
+          subject: "Ecstacy - Verify your Delete Account Request",
+          html: `<h2>Delete Account OTP</h2>
+    <p>Use the following OTP token to confirm your request to delete your account:
+      <strong><code>${verificationToken.id}</code></strong
+    </p>`,
+        });
+      } catch (err) {
+        respond(res, 500, "There was an error sending the email");
+        return;
+      }
+      respond(res, 200, "Email sent");
     } catch (err) {
       respond(res, 500, INTERNAL_ERROR);
     }

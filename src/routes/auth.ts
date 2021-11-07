@@ -52,13 +52,25 @@ route.post("/register", async (req: any, res, next) => {
     const salt = await genSalt();
     const hashedPassword = await hash(value.password, salt);
 
-    user = await prisma.user.create({
-      data: {
-        name: value.name,
-        email: value.email,
-        password: hashedPassword,
-      },
-    });
+    if (user) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          name: value.name,
+          password: hashedPassword,
+          deleted: false,
+          verified: false,
+        },
+      });
+    } else {
+      user = await prisma.user.create({
+        data: {
+          name: value.name,
+          email: value.email,
+          password: hashedPassword,
+        },
+      });
+    }
   } catch (exception) {
     console.log(exception);
     respond(res, 500, ERROR.INTERNAL_ERROR);
@@ -155,13 +167,10 @@ route.post("/login", async (req: any, res, next) => {
   respond(res, 200);
 });
 
-route.get("/logout", async (req: any, res, next) => {
-  if (!req.user) {
-    respond(res, 400, "You need to login to logout");
-    return;
-  }
-  res.clearCookie(process.env.SESSION_NAME);
-  req.session.destroy(() => respond(res, 200));
+route.get("/logout", isUser, async (req: any, res, next) => {
+  req.session.destroy(() =>
+    respond(res.clearCookie(process.env.SESSION_NAME), 200)
+  );
   return;
 });
 
@@ -192,10 +201,12 @@ route.get("/verify", async (req, res, next) => {
         userId: value.userId,
         type: "EMAIL_VERIFICATION",
       },
+      include: { user: { include: { buyerProfile: true } } },
     });
     if (!verifyToken(verificationToken, res)) return;
     // Good token
-    await prisma.buyer.create({ data: { userId } });
+    if (!verificationToken.user.buyerProfile)
+      await prisma.buyer.create({ data: { userId } });
     await prisma.token.update({
       where: { id: value.token },
       data: { valid: false },
@@ -219,13 +230,22 @@ route.post(
       return;
     }
     try {
-      // Invalidate all tokens first
-      await prisma.token.updateMany({
-        where: { userId: req.user.id, type: "EMAIL_VERIFICATION" },
-        data: { valid: false },
+      let verificationToken = await prisma.token.findFirst({
+        where: {
+          userId: req.user.id,
+          type: "EMAIL_VERIFICATION",
+          valid: true,
+          createdAt: {
+            gt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+          },
+        },
       });
+      if (verificationToken) {
+        respond(res, 400, "Verification token already sent to email!");
+        return;
+      }
       // Create a new token
-      const verificationToken = await prisma.token.create({
+      verificationToken = await prisma.token.create({
         data: { type: "EMAIL_VERIFICATION", userId: req.user.id },
       });
       const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${req.user.id}`;

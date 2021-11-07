@@ -17,14 +17,15 @@ import user from "./routes/user";
 
 const app = express();
 
-app.use(json());
 app.use(
   cors({
     origin: [process.env.CLIENT_ORIGIN],
-    methods: "*",
+    methods: "GET, HEAD, PUT, PATCH, POST, DELETE, OPTIONS",
     credentials: true,
   })
 );
+
+app.use(json());
 
 app.use(
   session({

@@ -49,11 +49,9 @@ export default async function validate(req, res, next) {
   });
   if (!user || user.deleted) {
     // Delete invalid session
-    await prisma.session.delete({
-      where: { sid: req.sessionID },
-    });
+    await prisma.session.delete({ where: { sid: req.sessionID } });
     req.session.destroy(() => {
-      res.clearCookie(process.env.SESSION_NAME);
+      respond(res, 400, ERROR.ACCOUNT_NOT_FOUND, undefined);
     });
     return;
   }
