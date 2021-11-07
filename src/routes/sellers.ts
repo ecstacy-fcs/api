@@ -10,21 +10,27 @@ const route = express();
 
 route.get('/', isUser, isUserVerified, isAdmin, async (req, res, next) => {
     try{
+        console.log('get sellers')
         const sellers = await prisma.seller.findMany({
             where:{
                 approved: req.query.approved === undefined? true : req.query.approved==='true'
             },
             select:{
+                id: true,
                 approved: true,
                 approvalDocument: true,
                 user: {
                     select:{
+                        id: true,
                         name: true,
-                        email: true
+                        email: true,
+                        verified: true,
                     }
                 }
             }
         })
+        console.log('hey')
+        console.log(sellers);
         respond(res,200,null,sellers);
     }catch(error){
         console.log(error);
@@ -38,6 +44,19 @@ route.get('/:id', isUser, isUserVerified, isAdmin, async (req, res, next) => {
         const seller = await prisma.seller.findUnique({
             where:{
                 id: req.params.id
+            },
+            select:{
+                id: true,
+                approved: true,
+                approvalDocument: true,
+                user: {
+                    select:{
+                        id: true,
+                        name: true,
+                        email: true,
+                        verified: true,
+                    }
+                }
             }
         });
         if(!seller){
@@ -59,6 +78,24 @@ route.patch('/:id/approve', isUser, isUserVerified, isAdmin, async (req, res, ne
             data:{
                 approved: true
             }
+        });
+        respond(res,200);
+    }catch(error){
+        //Record not found
+        if(error.code === 'P2025'){
+            respond(res,404,ERROR.ACCOUNT_NOT_FOUND);
+        }else{
+            respond(res,500,ERROR.INTERNAL_ERROR);
+        }
+    }
+})
+
+route.patch('/:id/deny', isUser, isUserVerified, isAdmin, async (req, res, next) => {
+    try{
+        const seller = await prisma.seller.delete({
+            where:{
+                id: req.params.id
+            },
         });
         respond(res,200);
     }catch(error){
