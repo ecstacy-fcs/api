@@ -7,6 +7,13 @@ import prisma from "src/prisma";
 
 const route = express();
 
+const productSchema = Joi.object({
+  name: Joi.string().trim().max(28).required(),
+  description: Joi.string().trim().max(124).required(),
+  price: Joi.number().positive().max(100000).min(1).required(),
+  category: Joi.string().trim().required(),
+});
+
 route.get("/", async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
@@ -34,15 +41,7 @@ route.get("/", async (req, res, next) => {
 });
 
 route.post("/", async (req, res, next) => {
-  const body = req.body;
-
-  const { value, error } = Joi.object({
-    name: Joi.string().max(28).required(),
-    description: Joi.string().max(124).required(),
-    price: Joi.number().positive().max(100000).min(1).required(),
-    category: Joi.string().required(),
-  }).validate(body);
-
+  const { value, error } = productSchema.validate(req.body, { convert: true });
   if (error) {
     respond(res, 400, `${BAD_INPUT}: ${error.message}`);
     return;
@@ -107,6 +106,14 @@ route.get("/:productId", async (req, res, next) => {
 });
 
 route.patch("/:productId", async (req, res, next) => {
+  const { value, error } = productSchema.validate(req.body, {
+    convert: true,
+  });
+  if (error) {
+    respond(res, 400, `${BAD_INPUT}: ${error.message}`);
+    return;
+  }
+
   try {
     const actor =
       (await prisma.seller.findUnique({
@@ -126,17 +133,6 @@ route.patch("/:productId", async (req, res, next) => {
     });
     if (!product) {
       respond(res, 404);
-      return;
-    }
-
-    const { value, error } = Joi.object({
-      name: Joi.string().max(28).required(),
-      description: Joi.string().max(124).required(),
-      price: Joi.number().positive().max(100000).min(1).required(),
-      category: Joi.string().required(),
-    }).validate(req.body);
-    if (error) {
-      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
       return;
     }
 

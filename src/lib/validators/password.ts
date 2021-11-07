@@ -11,4 +11,4 @@ import Joi from "joi";
 const PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,22}$/;
 
-export const schema = Joi.string().pattern(PASSWORD_REGEX).required();
+export const schema = Joi.string().trim().pattern(PASSWORD_REGEX).required();

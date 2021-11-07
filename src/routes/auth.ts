@@ -19,8 +19,8 @@ route.post("/register", async (req, res, next) => {
   const { value, error } = Joi.object({
     email: email.schema,
     password: password.schema,
-    name: Joi.string().required().max(30),
-  }).validate(body);
+    name: Joi.string().trim().max(30).required(),
+  }).validate(body, { convert: true });
 
   if (error) {
     respond(res, 400, `${ERROR.BAD_INPUT}: ${error.message}`);
@@ -88,7 +88,7 @@ route.post("/login", async (req, res, next) => {
   const { value, error } = Joi.object({
     email: email.schema,
     password: password.schema,
-  }).validate(body);
+  }).validate(body, { convert: true });
 
   if (error) {
     respond(res, 400, `${ERROR.BAD_INPUT}: ${error.message}`);
@@ -168,9 +168,9 @@ route.get("/user", async (req, res, next) => {
 route.get("/verify", async (req, res, next) => {
   const { token, userId } = req.query as { token: string; userId: string };
   const { value, error } = Joi.object({
-    token: Joi.string().required(),
-    userId: Joi.string().required(),
-  }).validate({ token, userId });
+    token: Joi.string().trim().required(),
+    userId: Joi.string().trim().required(),
+  }).validate({ token, userId }, { convert: true });
   if (error) {
     respond(res, 400, ERROR.BAD_INPUT);
     return;
