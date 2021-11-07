@@ -15,8 +15,6 @@ model User {
   address       String?
   phoneNumber   String?
   verified      Boolean @default(false)
-  adminId       String?
-  sellerId      String?
   adminProfile  Admin?
   buyerProfile  Buyer?
   sellerProfile Seller?
@@ -81,8 +79,8 @@ model Product {
 
 model ProductImage {
   id        String  @id @default(uuid())
-  path      String
   productId String
+  path      String
   product   Product @relation(fields: [productId], references: [id])
 
   @@index([productId], map: "ProductImage_productId_fkey")

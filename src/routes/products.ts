@@ -77,7 +77,7 @@ route.post(
     try {
       const product = await prisma.product.create({
         data: {
-          sellerId: req.user.sellerId,
+          sellerId: req.user.sellerProfile.id,
           name: value.name,
           description: value.description,
           price: value.price,
@@ -95,8 +95,21 @@ route.post(
   }
 );
 
+route.get("/categories", async (req, res, next) => {
+  try {
+    const categories = await prisma.productCategory.findMany();
+    respond(res, 200, "success", categories);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, INTERNAL_ERROR);
+  }
+});
+
 route.post(
   "/:productId/images",
+  isUser,
+  isUserVerified,
+  isApprovedSellerOrAdmin,
   upload.array("product-image", 3),
   async (req: MulterRequest, res, next) => {
     console.log(req.files);

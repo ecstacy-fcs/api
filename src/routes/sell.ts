@@ -5,6 +5,7 @@ import prisma from "src/prisma";
 import { MulterRequest } from "src/multer";
 import multer, { Multer } from "multer";
 import { v4 as uuidv4 } from "uuid";
+import { isSeller, isUser } from "src/lib/middlewares";
 
 const upload = multer({
   limits: {
@@ -27,13 +28,7 @@ interface ProductBody {
   category: string;
 }
 
-// route.use(upload.single("proposal"));
-
-route.get("/", async (req, res, next) => {
-  if (!req.session.uid) {
-    respond(res, 403, "user not logged in ");
-    return;
-  }
+route.get("/", isSeller, async (req, res, next) => {
   try {
     const seller = await prisma.seller.findUnique({
       where: {
@@ -43,11 +38,6 @@ route.get("/", async (req, res, next) => {
         products: true,
       },
     });
-
-    if (!seller) {
-      respond(res, 401, "no seller profile exists");
-      return;
-    }
     respond(res, 200, "success", seller);
   } catch (err) {
     console.error(err);

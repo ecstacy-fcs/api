@@ -10,8 +10,10 @@ import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
+import sell from "./routes/sell";
 import payment from "./routes/payment";
 import products from "./routes/products";
+import seller from "./routes/sellers";
 
 const app = express();
 
@@ -61,7 +63,9 @@ app.use(sessionValidator);
 app.use("/auth", auth);
 app.use("/products", products);
 app.use("/buy", isUser, isUserVerified, isBuyer, buy);
+app.use("/sell", isUser, isUserVerified, isBuyer, sell);
 app.use("/payment", payment);
+app.use('/sellers',seller);
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
