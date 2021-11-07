@@ -13,6 +13,7 @@ import buy from "./routes/buy";
 import payment from "./routes/payment";
 import products from "./routes/products";
 import seller from "./routes/sellers";
+import search from "./routes/search";
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/products", products);
 app.use("/buy", isUser, isUserVerified, isBuyer, buy);
 app.use("/payment", payment);
 app.use('/sellers',seller);
+app.use('/search', search)
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
