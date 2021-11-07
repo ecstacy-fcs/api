@@ -23,7 +23,7 @@ route.get("/payfororder", async(req, res, next) =>
         catch(exception)
         {
             console.log(exception);
-            respond(res, 500, ERROR.INTERNAL_ERRROR);
+            respond(res, 500, ERROR.INTERNAL_ERROR);
             return;
         }
 
@@ -40,7 +40,7 @@ route.get("/payfororder", async(req, res, next) =>
         catch(exception)
         {
             console.log(exception);
-            respond(res, 500, ERROR.INTERNAL_ERRROR);
+            respond(res, 500, ERROR.INTERNAL_ERROR);
             return;
         }
 
@@ -60,7 +60,7 @@ route.get("/payfororder", async(req, res, next) =>
         catch(exception)
         {
             console.log(exception);
-            respond(res, 500, ERROR.INTERNAL_ERRROR);
+            respond(res, 500, ERROR.INTERNAL_ERROR);
             return;
         }
                 
@@ -112,7 +112,7 @@ route.get("/payfororder", async(req, res, next) =>
 
             catch (exception) {
               console.log(exception);
-              respond(res, 500, ERROR.INTERNAL_ERRROR);
+              respond(res, 500, ERROR.INTERNAL_ERROR);
               return;
             }
         }); 
@@ -143,7 +143,7 @@ route.post("/validatepayment", async(req, res, next)=>
         }
         catch(exception)
         {
-            respond(res, 500, ERROR.INTERNAL_ERRROR, {"status":false}); 
+            respond(res, 500, ERROR.INTERNAL_ERROR, {"status":false}); 
             return
         }
         respond(res, 200, "Payment Successful", {"status":true})
