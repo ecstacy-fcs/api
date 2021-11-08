@@ -93,17 +93,18 @@ route.get(
   isUserVerified,
   isBuyer,
   async (req, res, next) => {
-    const payload = req.query.payload as string
-    const signature = req.query.signature as string
-    const orderId = req.query.orderId as string
-
+    const querySchema = Joi.string()
+      .trim()
+      .required()
+      .not("undefined")
+      .not("null");
     const { value, error } = Joi.object({
-      payload: Joi.string().trim().required(),
-      signature: Joi.string().trim().required(),
-      orderId: Joi.string().trim().required(),
+      payload: querySchema,
+      signature: querySchema,
+      orderId: querySchema,
     }).validate(req.query, { convert: true });
-    if (error || payload.includes("undefined") || payload.includes("null") || signature.includes("undefined") || signature.includes("null") || orderId.includes("undefined") || orderId.includes("null") || !payload || !signature || !orderId) {
-      console.log(error)
+    if (error) {
+      console.log(error);
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }
@@ -113,17 +114,17 @@ route.get(
     try {
       generatedSignature = crypto
         .createHmac("sha256", process.env.RAZORPAY_API_TEST_PASSWORD)
-        .update(payload)
+        .update(value.payload)
         .digest("hex");
     } catch (err) {
       respond(res, 500, ERROR.INTERNAL_ERROR);
       return;
     }
 
-    if (generatedSignature === signature) {
+    if (generatedSignature === value.signature) {
       try {
         await prisma.orders.update({
-          where: { id: orderId },
+          where: { id: value.orderId },
           data: { status: true },
         });
         respond(res, 200, "Payment Successful", { status: true });
