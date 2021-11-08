@@ -50,7 +50,6 @@ route.get("/", async (req, res, next) => {
         seller: {
           select: {
             id: true,
-            userId: true,
             user: {
               select: {
                 name: true,
