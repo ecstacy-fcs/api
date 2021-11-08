@@ -37,11 +37,12 @@
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dayjs": "^1.10.7",
+    "deep-email-validator": "^0.1.18",
     "dotenv": "^10.0.0",
     "express-session": "^1.17.2",
-    "node-fetch": "^3.0.0",
-    "razorpay": "^2.0.7",
     "joi": "^17.4.2",
-    "multer": "^1.4.3"
+    "multer": "^1.4.3",
+    "node-fetch": "^3.0.0",
+    "razorpay": "^2.0.7"
   }
 }

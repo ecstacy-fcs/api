@@ -11,3 +11,4 @@ export const ACCOUNT_NOT_FOUND = "User not found";
 export const PRODUCT_NOT_FOUND = "Invalid product ID";
 export const BAD_REQUEST = "Bad request";
 export const ACCOUNT_DELETED = "Account has been deleted";
+export const INVALID_EMAIL = "Please use a valid email";

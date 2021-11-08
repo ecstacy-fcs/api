@@ -1,6 +1,7 @@
 import { Token, User } from "@prisma/client";
 import { compare, genSalt, hash } from "bcrypt";
 import dayjs from "dayjs";
+import deepValidateEmail from "deep-email-validator";
 import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
@@ -10,7 +11,6 @@ import { respond } from "src/lib/request-respond";
 import * as email from "src/lib/validators/email";
 import * as password from "src/lib/validators/password";
 import prisma from "src/prisma";
-import { LoginBody, RegisterBody } from "src/types";
 
 const route = express();
 
@@ -23,35 +23,37 @@ route.post("/register", async (req: any, res, next) => {
     );
     return;
   }
-
-  const body: RegisterBody = req.body;
-
   const { value, error } = Joi.object({
     email: email.schema,
     password: password.schema,
     name: Joi.string().trim().max(30).required(),
-  }).validate(body, { convert: true });
-
+  }).validate(req.body, { convert: true });
   if (error) {
     respond(res, 400, `${ERROR.BAD_INPUT}: ${error.message}`);
     return;
   }
-
+  try {
+    const { valid } = await deepValidateEmail(value.email);
+    if (!valid) {
+      respond(res, 400, ERROR.INVALID_EMAIL);
+      return;
+    }
+  } catch (err) {
+    console.log(err);
+    respond(res, 500, ERROR.INTERNAL_ERROR);
+    return;
+  }
   let user: User;
-
   try {
     user = await prisma.user.findUnique({
       where: { email: value.email },
     });
-
     if (user && !user.deleted) {
       respond(res, 400, ERROR.ACCOUNT_EXISTS);
       return;
     }
-
     const salt = await genSalt();
     const hashedPassword = await hash(value.password, salt);
-
     if (user) {
       user = await prisma.user.update({
         where: { id: user.id },
@@ -76,15 +78,12 @@ route.post("/register", async (req: any, res, next) => {
     respond(res, 500, ERROR.INTERNAL_ERROR);
     return;
   }
-
   try {
     // Create verification token
     const verificationToken = await prisma.token.create({
       data: { type: "EMAIL_VERIFICATION", userId: user.id },
     });
-
     const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${user.id}`;
-
     try {
       // Send mail to user with verification token
       await mail({
@@ -100,7 +99,6 @@ route.post("/register", async (req: any, res, next) => {
       respond(res, 500, "There was an error sending the email");
       return;
     }
-
     respond(
       res,
       200,
@@ -116,36 +114,27 @@ route.post("/login", async (req: any, res, next) => {
     respond(res, 400, "You are already logged in! Log out to login again.");
     return;
   }
-
-  const body: LoginBody = req.body;
-
   const { value, error } = Joi.object({
     email: email.schema,
     password: password.schema,
-  }).validate(body, { convert: true });
-
+  }).validate(req.body, { convert: true });
   if (error) {
     respond(res, 400, `${ERROR.BAD_INPUT}: ${error.message}`);
     return;
   }
-
   let user: User;
-
   try {
     user = await prisma.user.findUnique({
       where: { email: value.email },
     });
-
     if (!user) {
       respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
       return;
     }
-
     if (!(await compare(value.password, user.password))) {
       respond(res, 403, ERROR.WRONG_PASSWORD);
       return;
     }
-
     if (user.deleted) {
       respond(
         res,
@@ -158,19 +147,15 @@ route.post("/login", async (req: any, res, next) => {
     respond(res, 500, ERROR.INTERNAL_ERROR);
     return;
   }
-
-  //TODO:use session.regenerate here
   req.session.uid = user.id;
   req.session.loginTime = new Date();
   req.session.lastActive = new Date();
-
   respond(res, 200);
 });
 
 route.get("/logout", isUser, async (req: any, res, next) => {
-  req.session.destroy(() =>
-    respond(res.clearCookie(process.env.SESSION_NAME), 200)
-  );
+  res = res.clearCookie(process.env.SESSION_NAME);
+  req.session.destroy(() => respond(res, 200));
   return;
 });
 
