@@ -13,6 +13,7 @@ import prisma from "src/prisma";
 import multer from "multer";
 import { MulterRequest } from "src/multer";
 import { v4 as uuidV4 } from "uuid";
+import "dotenv/config";
 
 const upload = multer({
   limits: {
@@ -36,6 +37,12 @@ const productSchema = Joi.object({
   category: Joi.string().trim().required(),
 });
 
+const convertImagePath = (product) => {
+  product.images.forEach((image) => {
+    image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
+  });
+};
+
 route.get("/", async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
@@ -51,10 +58,16 @@ route.get("/", async (req, res, next) => {
             },
           },
         },
-        images: true,
+        images: {
+          select: {
+            path: true,
+          },
+        },
         category: true,
       },
     });
+
+    products.forEach(convertImagePath);
     respond(res, 200, "all products", products);
   } catch (err) {
     console.error(err);
@@ -85,9 +98,6 @@ route.post(
           description: value.description,
           price: value.price,
           categoryId: value.category,
-          images: {
-            // handle this
-          },
         },
       });
       respond(res, 200, "success", product);
@@ -128,6 +138,32 @@ route.post(
   }
 );
 
+route.patch(
+  "/:productId/images",
+  isUser,
+  isUserVerified,
+  isApprovedSellerOrAdmin,
+  upload.array("product-image", 3),
+  async (req: MulterRequest, res, next) => {
+    console.log(req.files);
+    const prevData = await prisma.productImage.deleteMany({
+      where: {
+        productId: req.params.productId,
+      },
+    });
+
+    req.files.forEach(async (file) => {
+      const img = await prisma.productImage.create({
+        data: {
+          path: file.filename,
+          productId: req.params.productId,
+        },
+      });
+    });
+    respond(res, 200, "success");
+  }
+);
+
 route.get("/:productId", async (req, res, next) => {
   try {
     const product = await prisma.product.findUnique({
@@ -147,6 +183,10 @@ route.get("/:productId", async (req, res, next) => {
         images: true,
         category: true,
       },
+    });
+
+    product.images.forEach((image) => {
+      image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
     });
     respond(res, 200, "success", product);
   } catch (err) {
@@ -179,7 +219,12 @@ route.patch(
       }
       product = await prisma.product.update({
         where: { id: req.params.productId },
-        data: value,
+        data: {
+          name: value.name,
+          description: value.description,
+          price: value.price,
+          categoryId: value.category,
+        },
       });
       respond(res, 200, "success", product);
     } catch (err) {
@@ -233,6 +278,11 @@ route.get("/category/:categoryId", async (req, res, next) => {
                 },
               },
             },
+            images: {
+              select: {
+                path: true,
+              },
+            },
           },
         },
       },
@@ -241,6 +291,8 @@ route.get("/category/:categoryId", async (req, res, next) => {
       respond(res, 404);
       return;
     }
+
+    category.products.forEach(convertImagePath);
     respond(res, 200, "success", category.products);
   } catch (err) {
     console.error(err);
@@ -255,6 +307,11 @@ route.get("/seller/:sellerId", async (req, res, next) => {
       include: {
         products: {
           include: {
+            images: {
+              select: {
+                path: true,
+              },
+            },
             seller: {
               select: {
                 id: true,
@@ -274,6 +331,8 @@ route.get("/seller/:sellerId", async (req, res, next) => {
       respond(res, 404);
       return;
     }
+
+    seller.products.forEach(convertImagePath);
     respond(res, 200, "success", seller.products);
   } catch (err) {
     console.error(err);

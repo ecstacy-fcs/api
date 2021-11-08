@@ -37,7 +37,7 @@ app.use((req, res, next) =>
 
 // app.use(parseJSON);
 
-app.use(express.static(`${__dirname}/uploads`));
+app.use("/static", express.static(`${__dirname}/uploads`));
 app.use(
   cors({
     origin: [process.env.CLIENT_ORIGIN],
