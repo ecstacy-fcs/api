@@ -169,7 +169,7 @@ route.delete(
       respond(res, 403, ACCESS_DENIED);
       return;
     } catch (err) {
-      console.log(err);
+      console.error(err);
       respond(res, 500, INTERNAL_ERROR);
     }
   }

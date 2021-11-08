@@ -19,15 +19,9 @@ route.get(
   isAdmin,
   async (req, res, next) => {
     try {
-      const sellers = await prisma.seller.findMany({
-        where: {
-          approved:
-            req.query.approved === undefined || req.query.approved === "true",
-        },
+      const buyers = await prisma.buyer.findMany({
         select: {
           id: true,
-          approved: true,
-          approvalDocument: true,
           user: {
             select: {
               id: true,
@@ -38,7 +32,7 @@ route.get(
           },
         },
       });
-      respond(res, 200, "Success", sellers);
+      respond(res, 200, "Success", buyers);
     } catch (error) {
       console.error(error);
       respond(res, 500, ERROR.INTERNAL_ERROR);
@@ -54,14 +48,12 @@ route.get(
   isAdmin,
   async (req, res, next) => {
     try {
-      const seller = await prisma.seller.findUnique({
+      const buyer = await prisma.buyer.findUnique({
         where: {
           id: req.params.id,
         },
         select: {
           id: true,
-          approved: true,
-          approvalDocument: true,
           user: {
             select: {
               id: true,
@@ -72,59 +64,12 @@ route.get(
           },
         },
       });
-      if (!seller) {
+      if (!buyer) {
         respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 200, "Success", seller);
+      respond(res, 200, "Success", buyer);
     } catch (error) {
-      respond(res, 500, ERROR.INTERNAL_ERROR);
-    }
-  }
-);
-
-route.patch(
-  "/:id/approve",
-  isUser,
-  isNotDeleted,
-  isUserVerified,
-  isAdmin,
-  async (req, res, next) => {
-    try {
-      await prisma.seller.update({
-        where: { id: req.params.id },
-        data: { approved: true },
-      });
-      respond(res, 200);
-    } catch (error) {
-      // Record not found
-      if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
-        return;
-      }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
-    }
-  }
-);
-
-route.patch(
-  "/:id/deny",
-  isUser,
-  isNotDeleted,
-  isUserVerified,
-  isAdmin,
-  async (req, res, next) => {
-    try {
-      await prisma.seller.delete({
-        where: { id: req.params.id },
-      });
-      respond(res, 200);
-    } catch (error) {
-      // Record not found
-      if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
-        return;
-      }
       respond(res, 500, ERROR.INTERNAL_ERROR);
     }
   }
@@ -138,7 +83,7 @@ route.delete(
   isAdmin,
   async (req, res, next) => {
     try {
-      await prisma.seller.delete({
+      await prisma.buyer.delete({
         where: { id: req.params.id },
       });
       respond(res, 200);

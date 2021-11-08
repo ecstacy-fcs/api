@@ -46,7 +46,7 @@ route.post(
   upload.single("proposal"),
   async (req: any, res, next) => {
     console.log(req.file);
-    const seller = await prisma.seller.create({
+    await prisma.seller.create({
       data: {
         userId: req.user.id,
         approvalDocument: req.file.filename,
