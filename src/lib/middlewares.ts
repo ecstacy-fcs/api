@@ -1,5 +1,6 @@
 import {
   ACCESS_DENIED,
+  ACCOUNT_BANNED,
   ACCOUNT_DELETED,
   UNVERIFIED_ACCOUNT,
 } from "src/constants/errors";
@@ -37,7 +38,7 @@ export const isUserVerified = (req, res, next) => {
 
 export const isNotBanned = (req, res, next) => {
   if (!req.user?.banned) return next();
-  respond(res, 403, ACCESS_DENIED);
+  respond(res, 403, ACCOUNT_BANNED);
 };
 
 export const isSellerApproved = (req, res, next) => {

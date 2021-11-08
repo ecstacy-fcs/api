@@ -5,6 +5,7 @@ import Joi from "joi";
 import * as ERROR from "src/constants/errors";
 import {
   isBuyer,
+  isNotBanned,
   isNotDeleted,
   isUser,
   isUserVerified,
@@ -19,6 +20,7 @@ route.post(
   isUser,
   isNotDeleted,
   isUserVerified,
+  isNotBanned,
   isBuyer,
   async (req: any, res, next) => {
     const { value, error } = Joi.object({
@@ -91,6 +93,7 @@ route.get(
   isUser,
   isNotDeleted,
   isUserVerified,
+  isNotBanned,
   isBuyer,
   async (req, res, next) => {
     const querySchema = Joi.string()

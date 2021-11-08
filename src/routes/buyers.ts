@@ -2,6 +2,7 @@ import express from "express";
 import * as ERROR from "src/constants/errors";
 import {
   isAdmin,
+  isNotBanned,
   isNotDeleted,
   isUser,
   isUserVerified,
@@ -15,6 +16,7 @@ route.get(
   "/",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req, res, next) => {
@@ -55,6 +57,7 @@ route.get(
   isUser,
   isNotDeleted,
   isUserVerified,
+  isNotBanned,
   isAdmin,
   async (req, res, next) => {
     try {

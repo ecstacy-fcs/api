@@ -6,7 +6,7 @@ import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
 import { mail } from "src/lib/mail";
-import { isUser } from "src/lib/middlewares";
+import { isNotBanned, isNotDeleted, isUser } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import * as email from "src/lib/validators/email";
 import * as password from "src/lib/validators/password";
@@ -144,7 +144,7 @@ route.post("/login", async (req: any, res, next) => {
       return;
     }
     if(user.banned){
-      respond(res, 403, "Account banned. Contact admin to unban.");
+      respond(res, 403, ERROR.ACCOUNT_BANNED);
       return;
     }
   } catch (exception) {
@@ -163,7 +163,7 @@ route.get("/logout", isUser, async (req: any, res, next) => {
   return;
 });
 
-route.get("/user", async (req: any, res, next) => {
+route.get("/user", isUser, isNotDeleted, isNotBanned, async (req: any, res, next) => {
   if (!req.session?.uid || !req.user) return respond(res, 200, undefined);
   respond(res, 200, "logged-in user", {
     id: req.user.id,

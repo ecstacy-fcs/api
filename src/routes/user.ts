@@ -9,6 +9,8 @@ import {
 import { mail } from "src/lib/mail";
 import {
   isAdmin,
+  isBuyer,
+  isNotBanned,
   isNotDeleted,
   isUser,
   isUserVerified,
@@ -20,7 +22,7 @@ import { verifyToken } from "./auth";
 
 const route = express();
 
-route.get("/", isAdmin, isNotDeleted, async (req, res, next) => {
+route.get("/", isAdmin, isNotDeleted, isNotBanned, async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
       where: {
@@ -43,6 +45,7 @@ route.get(
   "/:userId",
   isVerifiedUserOrAdmin,
   isNotDeleted,
+  isNotBanned,
   async (req: any, res, next) => {
     const { userId } = req.params;
     if (userId === req.user.id) {
@@ -77,6 +80,7 @@ route.patch(
   "/:userId",
   isVerifiedUserOrAdmin,
   isNotDeleted,
+  isNotBanned,
   async (req: any, res, next) => {
     const { value, error } = Joi.object({
       name: Joi.string().trim().max(30).required(),
@@ -118,6 +122,7 @@ route.delete(
   "/:userId",
   isVerifiedUserOrAdmin,
   isNotDeleted,
+  isNotBanned,
   async (req: any, res, next) => {
     let value: any;
     let error: any;
@@ -183,6 +188,7 @@ route.post(
   isUser,
   isUserVerified,
   isNotDeleted,
+  isNotBanned,
   async (req: any, res, next) => {
     try {
       // Check if valid verification token already exists and sent
@@ -233,7 +239,7 @@ route.post(
   }
 );
 
-route.post('/:userID/ban', isUser, isNotDeleted, isAdmin, async (req: any, res, next) => {
+route.post('/:userID/ban', isUser, isNotDeleted, isNotBanned, isAdmin, async (req: any, res, next) => {
   try {
     const { userID } = req.params;
     await prisma.user.update({
@@ -252,7 +258,7 @@ route.post('/:userID/ban', isUser, isNotDeleted, isAdmin, async (req: any, res, 
 });
 
 
-route.post('/:userID/unban', isUser, isNotDeleted, isAdmin, async (req, res, next) => {
+route.post('/:userID/unban', isUser, isNotDeleted, isNotBanned, isAdmin, async (req, res, next) => {
   try {
     const { userID } = req.params;
     await prisma.user.update({

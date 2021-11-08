@@ -2,6 +2,7 @@ import express from "express";
 import * as ERROR from "src/constants/errors";
 import {
   isAdmin,
+  isNotBanned,
   isNotDeleted,
   isUser,
   isUserVerified,
@@ -15,6 +16,7 @@ route.get(
   "/",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req, res, next) => {
@@ -54,6 +56,7 @@ route.get(
   "/:id",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req, res, next) => {
@@ -93,6 +96,7 @@ route.patch(
   "/:id/approve",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req, res, next) => {
@@ -117,6 +121,7 @@ route.patch(
   "/:id/deny",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req, res, next) => {
