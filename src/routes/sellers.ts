@@ -23,6 +23,9 @@ route.get(
         where: {
           approved:
             req.query.approved === undefined || req.query.approved === "true",
+            user:{
+                deleted:false
+            }
         },
         select: {
           id: true,
@@ -34,6 +37,7 @@ route.get(
               name: true,
               email: true,
               verified: true,
+              banned: true,
             },
           },
         },
@@ -68,11 +72,13 @@ route.get(
               name: true,
               email: true,
               verified: true,
+              deleted: true,
+              banned: true,
             },
           },
         },
       });
-      if (!seller) {
+      if (!seller || seller.user.deleted) {
         respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
@@ -130,27 +136,5 @@ route.patch(
   }
 );
 
-route.delete(
-  "/:id",
-  isUser,
-  isNotDeleted,
-  isUserVerified,
-  isAdmin,
-  async (req, res, next) => {
-    try {
-      await prisma.seller.delete({
-        where: { id: req.params.id },
-      });
-      respond(res, 200);
-    } catch (error) {
-      // Record not found
-      if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
-        return;
-      }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
-    }
-  }
-);
 
 export default route;

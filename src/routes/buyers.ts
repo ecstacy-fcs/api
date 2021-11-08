@@ -20,6 +20,14 @@ route.get(
   async (req, res, next) => {
     try {
       const buyers = await prisma.buyer.findMany({
+        where: {
+            user:{
+                deleted: false,
+                adminProfile:{
+                    is: null
+                }
+            }
+        },
         select: {
           id: true,
           user: {
@@ -28,10 +36,12 @@ route.get(
               name: true,
               email: true,
               verified: true,
+              banned: true,
             },
           },
         },
       });
+
       respond(res, 200, "Success", buyers);
     } catch (error) {
       console.log(error);
@@ -60,11 +70,13 @@ route.get(
               name: true,
               email: true,
               verified: true,
+              deleted: true,
+              banned: true,
             },
           },
         },
       });
-      if (!buyer) {
+      if (!buyer || buyer.user.deleted) {
         respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
@@ -75,27 +87,6 @@ route.get(
   }
 );
 
-route.delete(
-  "/:id",
-  isUser,
-  isNotDeleted,
-  isUserVerified,
-  isAdmin,
-  async (req, res, next) => {
-    try {
-      await prisma.buyer.delete({
-        where: { id: req.params.id },
-      });
-      respond(res, 200);
-    } catch (error) {
-      // Record not found
-      if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
-        return;
-      }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
-    }
-  }
-);
+
 
 export default route;

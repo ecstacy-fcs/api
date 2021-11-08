@@ -48,7 +48,7 @@ route.post("/register", async (req: any, res, next) => {
     user = await prisma.user.findUnique({
       where: { email: value.email },
     });
-    if (user && !user.deleted) {
+    if ((user && !user.deleted) || (user && user.banned)) {
       respond(res, 400, ERROR.ACCOUNT_EXISTS);
       return;
     }
@@ -135,12 +135,16 @@ route.post("/login", async (req: any, res, next) => {
       respond(res, 403, ERROR.WRONG_PASSWORD);
       return;
     }
-    if (user.deleted) {
+    if (user.deleted && !user.banned) {
       respond(
         res,
         404,
         "Account deleted. Register again with the same email ID to activate it."
       );
+      return;
+    }
+    if(user.banned){
+      respond(res, 403, "Account banned. Contact admin to unban.");
       return;
     }
   } catch (exception) {
