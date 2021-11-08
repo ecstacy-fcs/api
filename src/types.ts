@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export interface RegisterBody {
   name: string;
   email: string;
@@ -14,4 +16,9 @@ declare module "express-session" {
     loginTime: Date;
     lastActive: Date;
   }
+}
+
+export interface MulterRequest extends Request {
+  file: any;
+  files: any[];
 }
