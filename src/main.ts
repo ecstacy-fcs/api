@@ -16,7 +16,6 @@ import search from "./routes/search";
 import sell from "./routes/sell";
 import seller from "./routes/sellers";
 import user from "./routes/user";
-import buyer from "./routes/buyers";
 
 const app = express();
 
