@@ -30,7 +30,6 @@ route.post(
       return;
     }
 
-    console.log('here')
     const { pid: productId } = value;
 
     try {
@@ -87,29 +86,27 @@ route.post(
   }
 );
 
-route.post(
+route.get(
   "/validate",
   isUser,
   isNotDeleted,
   isUserVerified,
   isBuyer,
   async (req, res, next) => {
+    const payload = req.query.payload as string
+    const signature = req.query.signature as string
+    const orderId = req.query.orderId as string
+
     const { value, error } = Joi.object({
-      razorpay_payload: Joi.string().trim().required(),
-      razorpay_signature: Joi.string().trim().required(),
+      payload: Joi.string().trim().required(),
+      signature: Joi.string().trim().required(),
       orderId: Joi.string().trim().required(),
-    }).validate(req.body, { convert: true });
-    if (error) {
+    }).validate(req.query, { convert: true });
+    if (error || payload.includes("undefined") || payload.includes("null") || signature.includes("undefined") || signature.includes("null") || orderId.includes("undefined") || orderId.includes("null") || !payload || !signature || !orderId) {
       console.log(error)
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }
-
-    const {
-      razorpay_payload: payload,
-      razorpay_signature: signature,
-      orderId,
-    } = value;
 
     let generatedSignature: string;
 
@@ -137,7 +134,7 @@ route.post(
       }
     }
 
-    respond(res, 200, "Payment Not Successful", { status: false });
+    respond(res, 400, "Payment Not Successful", { status: false });
     return;
   }
 );

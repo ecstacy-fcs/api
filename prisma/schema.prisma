@@ -43,7 +43,7 @@ model Token {
 model Admin {
   id     String @id @default(uuid())
   userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Seller {
@@ -51,7 +51,7 @@ model Seller {
   userId           String    @unique
   approved         Boolean   @default(false)
   approvalDocument String?
-  user             User      @relation(fields: [userId], references: [id])
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   products         Product[]
 }
 
@@ -69,7 +69,7 @@ model Product {
   price       Int
   sellerId    String
   categoryId  String
-  category    ProductCategory @relation(fields: [categoryId], references: [id])
+  category    ProductCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   seller      Seller          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   orders      Orders[]
   images      ProductImage[]
@@ -100,7 +100,7 @@ model Orders {
   quantity  Int      @default(1)
   status    Boolean  @default(false)
   time      DateTime @default(now())
-  buyer     Buyer    @relation(fields: [buyerId], references: [id])
+  buyer     Buyer    @relation(fields: [buyerId], references: [id], onDelete: Cascade)
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([buyerId], map: "Orders_buyerId_fkey")
