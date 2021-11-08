@@ -1,5 +1,5 @@
 import express from "express";
-import { INTERNAL_ERROR } from "src/constants/errors";
+import { INTERNAL_ERROR, BAD_INPUT } from "src/constants/errors";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 
@@ -8,7 +8,7 @@ const route = express();
 route.get("/:keyword", async (req, res, next) => {
   const keyword = req.params.keyword;
   if (!keyword) {
-    respond(res, 200, "No keyword");
+    respond(res, 400, BAD_INPUT);
     return;
   }
   try {
