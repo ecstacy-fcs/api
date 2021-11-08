@@ -1,6 +1,8 @@
 import { Product } from "@prisma/client";
+import "dotenv/config";
 import express from "express";
 import Joi from "joi";
+import multer from "multer";
 import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
 import {
   isApprovedSellerOrAdmin,
@@ -10,10 +12,8 @@ import {
 } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
-import multer from "multer";
-import { MulterRequest } from "src/multer";
+import { MulterRequest } from "src/types";
 import { v4 as uuidV4 } from "uuid";
-import "dotenv/config";
 
 const upload = multer({
   limits: {
