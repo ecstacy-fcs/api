@@ -20,6 +20,7 @@ model User {
   sellerProfile Seller?
   tokens        Token[]
   deleted       Boolean @default(false)
+  banned        Boolean @default(false)
 }
 
 model Session {
@@ -73,6 +74,7 @@ model Product {
   seller      Seller          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   orders      Orders[]
   images      ProductImage[]
+  banned     Boolean         @default(false)
 
   @@index([categoryId, name])
   @@index([sellerId], map: "Product_sellerId_fkey")
