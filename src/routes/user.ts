@@ -6,6 +6,7 @@ import {
   BAD_INPUT,
   INTERNAL_ERROR,
 } from "src/constants/errors";
+import { log } from "src/lib/log";
 import { mail } from "src/lib/mail";
 import {
   isAdmin,
@@ -103,6 +104,7 @@ route.patch(
             address: value.address,
           },
         });
+        log(req, "UPDATE", `User ${userId} updated`);
         respond(res, 200, "Success");
         return;
       }
@@ -147,6 +149,7 @@ route.delete(
             where: { id: userId },
             data: { deleted: true },
           });
+          log(req, "DELETE", `User ${userId} deleted by admin`);
           respond(res, 200, "Success");
           return;
         }
@@ -162,10 +165,12 @@ route.delete(
           where: { id: verificationToken.id },
           data: { valid: false },
         });
+        log(req, "UPDATE", "Delete account token invalidated");
         await prisma.user.update({
           where: { id: userId },
           data: { deleted: true },
         });
+        log(req, "DELETE", `User ${userId} deleted by user`);
         respond(res, 200, "Account deleted");
         return;
       }
@@ -213,6 +218,7 @@ route.post(
           type: "DELETE_ACCOUNT",
         },
       });
+      log(req, "CREATE", "Delete account verfication token created");
       try {
         await mail({
           to: req.user.email,

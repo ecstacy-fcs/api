@@ -1,5 +1,6 @@
 import express from "express";
 import * as ERROR from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
   isBuyer,
   isNotDeleted,
@@ -25,6 +26,7 @@ route.post(
           productId: productId,
         },
       });
+      log(req, "CREATE", `Order created for product ${productId}`);
       respond(res, 200, "success", order);
     } catch (err) {
       console.error(err);

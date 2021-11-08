@@ -1,5 +1,6 @@
 import express from "express";
 import * as ERROR from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
   isAdmin,
   isNotDeleted,
@@ -23,9 +24,9 @@ route.get(
         where: {
           approved:
             req.query.approved === undefined || req.query.approved === "true",
-            user:{
-                deleted:false
-            }
+          user: {
+            deleted: false,
+          },
         },
         select: {
           id: true,
@@ -95,12 +96,13 @@ route.patch(
   isNotDeleted,
   isUserVerified,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       await prisma.seller.update({
         where: { id: req.params.id },
         data: { approved: true },
       });
+      log(req, "UPDATE", `Seller ${req.params.id} approved`);
       respond(res, 200);
     } catch (error) {
       // Record not found
@@ -119,11 +121,12 @@ route.patch(
   isNotDeleted,
   isUserVerified,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       await prisma.seller.delete({
         where: { id: req.params.id },
       });
+      log(req, "UPDATE", `Seller ${req.params.id} denied`);
       respond(res, 200);
     } catch (error) {
       // Record not found
@@ -136,5 +139,28 @@ route.patch(
   }
 );
 
+route.delete(
+  "/:id",
+  isUser,
+  isNotDeleted,
+  isUserVerified,
+  isAdmin,
+  async (req: any, res, next) => {
+    try {
+      await prisma.seller.delete({
+        where: { id: req.params.id },
+      });
+      log(req, "UPDATE", `Seller ${req.params.id} deleted`);
+      respond(res, 200);
+    } catch (error) {
+      // Record not found
+      if (error.code === "P2025") {
+        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        return;
+      }
+      respond(res, 500, ERROR.INTERNAL_ERROR);
+    }
+  }
+);
 
 export default route;

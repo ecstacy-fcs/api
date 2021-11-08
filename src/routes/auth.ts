@@ -5,6 +5,7 @@ import deepValidateEmail from "deep-email-validator";
 import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
+import { log } from "src/lib/log";
 import { mail } from "src/lib/mail";
 import { isUser } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
@@ -72,6 +73,7 @@ route.post("/register", async (req: any, res, next) => {
           password: hashedPassword,
         },
       });
+      log({ ...req, user }, "CREATE", "User registered");
     }
   } catch (exception) {
     console.error(exception);
@@ -83,6 +85,7 @@ route.post("/register", async (req: any, res, next) => {
     const verificationToken = await prisma.token.create({
       data: { type: "EMAIL_VERIFICATION", userId: user.id },
     });
+    log({ ...req, user }, "CREATE", "Email verification token created");
     const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${user.id}`;
     try {
       // Send mail to user with verification token
@@ -154,10 +157,12 @@ route.post("/login", async (req: any, res, next) => {
   req.session.uid = user.id;
   req.session.loginTime = new Date();
   req.session.lastActive = new Date();
+  log({ ...req, user }, "CREATE", "User session created, logged in");
   respond(res, 200);
 });
 
 route.get("/logout", isUser, async (req: any, res, next) => {
+  log(req, "DELETE", "User session destroyed, logged out");
   res = res.clearCookie(process.env.SESSION_NAME);
   req.session.destroy(() => respond(res, 200));
   return;
@@ -194,16 +199,28 @@ route.get("/verify", async (req, res, next) => {
     });
     if (!verifyToken(verificationToken, res)) return;
     // Good token
-    if (!verificationToken.user.buyerProfile)
+    if (!verificationToken.user.buyerProfile) {
+      log(
+        { ...req, user: verificationToken.user },
+        "CREATE",
+        "Buyer profile created"
+      );
       await prisma.buyer.create({ data: { userId } });
+    }
     await prisma.token.update({
       where: { id: value.token },
       data: { valid: false },
     });
+    log(
+      { ...req, user: verificationToken.user },
+      "UPDATE",
+      "Email verification token invalidated"
+    );
     await prisma.user.update({
       where: { id: value.userId },
       data: { verified: true },
     });
+    log({ ...req, user: verificationToken.user }, "UPDATE", "User verified");
     res.redirect(`${process.env.CLIENT_ORIGIN}/auth/login?verified=true`);
   } catch (err) {
     respond(res, 500, ERROR.INTERNAL_ERROR);
@@ -237,6 +254,7 @@ route.post(
       verificationToken = await prisma.token.create({
         data: { type: "EMAIL_VERIFICATION", userId: req.user.id },
       });
+      log(req, "CREATE", "Email verification token created");
       const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${req.user.id}`;
       try {
         // Send mail to user with verification token
@@ -302,6 +320,7 @@ route.post("/forgot-password", async (req: any, res, next) => {
         type: "FORGOT_PASSWORD",
       },
     });
+    log({ ...req, user }, "CREATE", "Forgot password token created");
     try {
       await mail({
         to: user.email,
@@ -354,10 +373,20 @@ route.post("/update-password", async (req: any, res, next) => {
       where: { id: verificationToken.id },
       data: { valid: false },
     });
+    log(
+      { ...req, user: verificationToken.user },
+      "UPDATE",
+      "Password verification token invalidated"
+    );
     await prisma.user.update({
       where: { id: verificationToken.userId },
       data: { password: hashedPassword },
     });
+    log(
+      { ...req, user: verificationToken.user },
+      "UPDATE",
+      "User password updated"
+    );
     respond(res, 200, "Password updated!");
   } catch (err) {
     respond(res, 500, ERROR.INTERNAL_ERROR);

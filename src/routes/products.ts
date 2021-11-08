@@ -4,6 +4,7 @@ import express from "express";
 import Joi from "joi";
 import multer from "multer";
 import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
   isAdmin,
   isApprovedSellerOrAdmin,
@@ -157,6 +158,7 @@ route.post(
           categoryId: value.category,
         },
       });
+      log(req, "CREATE", `Product ${product.id} created`);
       respond(res, 200, "success", product);
     } catch (err) {
       console.error(err);
@@ -191,6 +193,11 @@ route.post(
         },
       });
     });
+    log(
+      req,
+      "CREATE",
+      `Product images created for product ${req.params.productId}`
+    );
     respond(res, 200, "success");
   }
 );
@@ -217,6 +224,11 @@ route.patch(
         },
       });
     });
+    log(
+      req,
+      "UPDATE",
+      `Product images updated for product ${req.params.productId}`
+    );
     respond(res, 200, "success");
   }
 );
@@ -308,7 +320,7 @@ route.patch(
   isNotDeleted,
   isUserVerified,
   isApprovedSellerOrAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     const { value, error } = productSchema.validate(req.body, {
       convert: true,
     });
@@ -333,6 +345,7 @@ route.patch(
           categoryId: value.category,
         },
       });
+      log(req, "UPDATE", `Product ${product.id} updated`);
       respond(res, 200, "success", product);
     } catch (err) {
       console.error(err);
@@ -347,7 +360,7 @@ route.delete(
   isNotDeleted,
   isUserVerified,
   isApprovedSellerOrAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       const product: Product = await prisma.product.findUnique({
         where: { id: req.params.productId },
@@ -359,6 +372,7 @@ route.delete(
       await prisma.product.delete({
         where: { id: req.params.productId },
       });
+      log(req, "DELETE", `Product ${product.id} deleted`);
       respond(res, 200, "success");
     } catch (err) {
       console.error(err);

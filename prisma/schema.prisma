@@ -21,6 +21,7 @@ model User {
   tokens        Token[]
   deleted       Boolean @default(false)
   banned        Boolean @default(false)
+  events        Event[]
 }
 
 model Session {
@@ -74,7 +75,7 @@ model Product {
   seller      Seller          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   orders      Orders[]
   images      ProductImage[]
-  banned     Boolean         @default(false)
+  banned      Boolean         @default(false)
 
   @@index([categoryId, name])
   @@index([sellerId], map: "Product_sellerId_fkey")
@@ -110,13 +111,24 @@ model Orders {
 }
 
 model Event {
-  id   String   @id @default(uuid())
-  time DateTime @default(now())
-  type String
+  id          String    @id @default(uuid())
+  time        DateTime  @default(now())
+  ipAddress   String
+  actorId     String
+  actor       User      @relation(fields: [actorId], references: [id])
+  type        EventType
+  description String?
 }
 
 enum Token_type {
   EMAIL_VERIFICATION
   FORGOT_PASSWORD
   DELETE_ACCOUNT
+}
+
+enum EventType {
+  CREATE
+  READ
+  UPDATE
+  DELETE
 }
