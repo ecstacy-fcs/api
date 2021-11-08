@@ -11,7 +11,6 @@ import {
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 import multer from "multer";
-import { MulterRequest } from "src/multer";
 import { v4 as uuidV4 } from "uuid";
 import "dotenv/config";
 
@@ -124,7 +123,7 @@ route.post(
   isUserVerified,
   isApprovedSellerOrAdmin,
   upload.array("product-image", 3),
-  async (req: MulterRequest, res, next) => {
+  async (req: any, res, next) => {
     console.log(req.files);
     req.files.forEach(async (file) => {
       const img = await prisma.productImage.create({
@@ -144,7 +143,7 @@ route.patch(
   isUserVerified,
   isApprovedSellerOrAdmin,
   upload.array("product-image", 3),
-  async (req: MulterRequest, res, next) => {
+  async (req: any, res, next) => {
     console.log(req.files);
     const prevData = await prisma.productImage.deleteMany({
       where: {
