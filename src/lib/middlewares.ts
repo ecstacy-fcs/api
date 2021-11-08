@@ -35,7 +35,7 @@ export const isUserVerified = (req, res, next) => {
   respond(res, 403, UNVERIFIED_ACCOUNT);
 };
 
-export const isUserNotBanned = (req, res, next) => {
+export const isNotBanned = (req, res, next) => {
   if (!req.user?.banned) return next();
   respond(res, 403, ACCESS_DENIED);
 };

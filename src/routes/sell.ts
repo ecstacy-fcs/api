@@ -1,7 +1,7 @@
 import express from "express";
 import multer from "multer";
 import { INTERNAL_ERROR } from "src/constants/errors";
-import { isSeller } from "src/lib/middlewares";
+import { isNotBanned, isNotDeleted, isSeller, isUser } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 import { v4 as uuidv4 } from "uuid";
@@ -27,7 +27,7 @@ interface ProductBody {
   category: string;
 }
 
-route.get("/", isSeller, async (req: any, res, next) => {
+route.get("/", isSeller , isNotDeleted, isNotBanned, async (req: any, res, next) => {
   try {
     const seller = await prisma.seller.findUnique({
       where: { userId: req.user.id },
@@ -48,6 +48,9 @@ route.get("/proposals", async (req, res, next) => {
 
 route.post(
   "/proposal",
+  isUser,
+  isNotDeleted,
+  isNotBanned,
   upload.single("proposal"),
   async (req: any, res, next) => {
     console.log(req.file);
