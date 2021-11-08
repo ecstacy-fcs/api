@@ -242,6 +242,10 @@ route.post(
 route.post('/:userID/ban', isUser, isNotDeleted, isNotBanned, isAdmin, async (req: any, res, next) => {
   try {
     const { userID } = req.params;
+    if(userID === req.user.id) {
+      respond(res, 400, "You cannot ban yourself!");
+      return;
+    }
     await prisma.user.update({
       where: { id: userID },
       data: { banned: true },
