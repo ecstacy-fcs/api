@@ -10,6 +10,23 @@ import {
 } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
+import multer from "multer";
+import { MulterRequest } from "src/multer";
+import { v4 as uuidV4 } from "uuid";
+import "dotenv/config";
+
+const upload = multer({
+  limits: {
+    fileSize: 1000000,
+  },
+  storage: multer.diskStorage({
+    destination: "./src/uploads/product-images",
+    filename: async (req, file, cb) => {
+      const ext = file.mimetype.split("/")[1];
+      cb(null, `${uuidV4()}.${ext}`);
+    },
+  }),
+});
 
 const route = express();
 
@@ -19,6 +36,12 @@ const productSchema = Joi.object({
   price: Joi.number().positive().max(100000).min(1).required(),
   category: Joi.string().trim().required(),
 });
+
+const convertImagePath = (product) => {
+  product.images.forEach((image) => {
+    image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
+  });
+};
 
 route.get("/", async (req, res, next) => {
   try {
@@ -35,10 +58,16 @@ route.get("/", async (req, res, next) => {
             },
           },
         },
-        images: true,
+        images: {
+          select: {
+            path: true,
+          },
+        },
         category: true,
       },
     });
+
+    products.forEach(convertImagePath);
     respond(res, 200, "all products", products);
   } catch (err) {
     console.error(err);
@@ -64,14 +93,11 @@ route.post(
     try {
       const product = await prisma.product.create({
         data: {
-          sellerId: req.user.sellerId,
+          sellerId: req.user.sellerProfile.id,
           name: value.name,
           description: value.description,
           price: value.price,
           categoryId: value.category,
-          images: {
-            // handle this
-          },
         },
       });
       respond(res, 200, "success", product);
@@ -79,6 +105,62 @@ route.post(
       console.error(err);
       respond(res, 500, INTERNAL_ERROR);
     }
+  }
+);
+
+route.get("/categories", async (req, res, next) => {
+  try {
+    const categories = await prisma.productCategory.findMany();
+    respond(res, 200, "success", categories);
+  } catch (err) {
+    console.error(err);
+    respond(res, 500, INTERNAL_ERROR);
+  }
+});
+
+route.post(
+  "/:productId/images",
+  isUser,
+  isUserVerified,
+  isApprovedSellerOrAdmin,
+  upload.array("product-image", 3),
+  async (req: MulterRequest, res, next) => {
+    console.log(req.files);
+    req.files.forEach(async (file) => {
+      const img = await prisma.productImage.create({
+        data: {
+          path: file.filename,
+          productId: req.params.productId,
+        },
+      });
+    });
+    respond(res, 200, "success");
+  }
+);
+
+route.patch(
+  "/:productId/images",
+  isUser,
+  isUserVerified,
+  isApprovedSellerOrAdmin,
+  upload.array("product-image", 3),
+  async (req: MulterRequest, res, next) => {
+    console.log(req.files);
+    const prevData = await prisma.productImage.deleteMany({
+      where: {
+        productId: req.params.productId,
+      },
+    });
+
+    req.files.forEach(async (file) => {
+      const img = await prisma.productImage.create({
+        data: {
+          path: file.filename,
+          productId: req.params.productId,
+        },
+      });
+    });
+    respond(res, 200, "success");
   }
 );
 
@@ -101,6 +183,10 @@ route.get("/:productId", async (req, res, next) => {
         images: true,
         category: true,
       },
+    });
+
+    product.images.forEach((image) => {
+      image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
     });
     respond(res, 200, "success", product);
   } catch (err) {
@@ -133,7 +219,12 @@ route.patch(
       }
       product = await prisma.product.update({
         where: { id: req.params.productId },
-        data: value,
+        data: {
+          name: value.name,
+          description: value.description,
+          price: value.price,
+          categoryId: value.category,
+        },
       });
       respond(res, 200, "success", product);
     } catch (err) {
@@ -187,6 +278,11 @@ route.get("/category/:categoryId", async (req, res, next) => {
                 },
               },
             },
+            images: {
+              select: {
+                path: true,
+              },
+            },
           },
         },
       },
@@ -195,6 +291,8 @@ route.get("/category/:categoryId", async (req, res, next) => {
       respond(res, 404);
       return;
     }
+
+    category.products.forEach(convertImagePath);
     respond(res, 200, "success", category.products);
   } catch (err) {
     console.error(err);
@@ -209,6 +307,11 @@ route.get("/seller/:sellerId", async (req, res, next) => {
       include: {
         products: {
           include: {
+            images: {
+              select: {
+                path: true,
+              },
+            },
             seller: {
               select: {
                 id: true,
@@ -228,6 +331,8 @@ route.get("/seller/:sellerId", async (req, res, next) => {
       respond(res, 404);
       return;
     }
+
+    seller.products.forEach(convertImagePath);
     respond(res, 200, "success", seller.products);
   } catch (err) {
     console.error(err);
