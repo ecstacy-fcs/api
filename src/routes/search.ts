@@ -1,5 +1,5 @@
 import express from "express";
-import { INTERNAL_ERROR, BAD_INPUT } from "src/constants/errors";
+import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 
@@ -43,7 +43,8 @@ route.get("/:keyword", async (req, res, next) => {
           },
         },
         category: true,
-      }});
+      },
+    });
     products.forEach(convertImagePath);
     respond(res, 200, "search results", products);
   } catch (exception) {

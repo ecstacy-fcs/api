@@ -75,7 +75,6 @@ route.get(
   }
 );
 
-
 route.delete(
   "/:id",
   isUser,
