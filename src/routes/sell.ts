@@ -20,17 +20,13 @@ const upload = multer({
 
 const route = express();
 
-interface ProductBody {
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-}
 
 route.get("/", isSeller , isNotDeleted, isNotBanned, async (req: any, res, next) => {
   try {
     const seller = await prisma.seller.findUnique({
-      where: { userId: req.user.id },
+      where: {
+        userId: req.user.id,
+      },
       include: {
         products: true,
       },

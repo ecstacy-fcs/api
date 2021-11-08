@@ -44,7 +44,7 @@ route.get(
       });
       respond(res, 200, "Success", sellers);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       respond(res, 500, ERROR.INTERNAL_ERROR);
     }
   }

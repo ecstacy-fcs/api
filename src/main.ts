@@ -10,7 +10,6 @@ import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
-import buyer from "./routes/buyers";
 import payment from "./routes/payment";
 import products from "./routes/products";
 import search from "./routes/search";

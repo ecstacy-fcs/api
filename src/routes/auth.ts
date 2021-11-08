@@ -39,7 +39,7 @@ route.post("/register", async (req: any, res, next) => {
       return;
     }
   } catch (err) {
-    console.log(err);
+    console.error(err);
     respond(res, 500, ERROR.INTERNAL_ERROR);
     return;
   }
@@ -74,7 +74,7 @@ route.post("/register", async (req: any, res, next) => {
       });
     }
   } catch (exception) {
-    console.log(exception);
+    console.error(exception);
     respond(res, 500, ERROR.INTERNAL_ERROR);
     return;
   }
