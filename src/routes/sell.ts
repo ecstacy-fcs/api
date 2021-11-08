@@ -28,11 +28,11 @@ interface ProductBody {
   category: string;
 }
 
-route.get("/", isSeller, async (req, res, next) => {
+route.get("/", isSeller, async (req: any, res, next) => {
   try {
     const seller = await prisma.seller.findUnique({
       where: {
-        userId: req.session.uid,
+        userId: req.user.id,
       },
       include: {
         products: true,
@@ -52,11 +52,11 @@ route.get("/proposals", async (req, res, next) => {
 route.post(
   "/proposal",
   upload.single("proposal"),
-  async (req: MulterRequest, res, next) => {
+  async (req: any, res, next) => {
     console.log(req.file);
     const seller = await prisma.seller.create({
       data: {
-        userId: req.session.uid,
+        userId:  req.user.id,
         approvalDocument: req.file.filename,
       },
     });

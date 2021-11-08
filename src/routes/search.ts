@@ -5,6 +5,12 @@ import prisma from "src/prisma";
 
 const route = express();
 
+const convertImagePath = (product) => {
+  product.images.forEach((image) => {
+    image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
+  });
+};
+
 route.get("/:keyword", async (req, res, next) => {
   const keyword = req.params.keyword;
   if (!keyword) {
@@ -24,12 +30,21 @@ route.get("/:keyword", async (req, res, next) => {
         seller: {
           select: {
             id: true,
+            user: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
-        images: true,
+        images: {
+          select: {
+            path: true,
+          },
+        },
         category: true,
-      },
-    });
+      }});
+    products.forEach(convertImagePath);
     respond(res, 200, "search results", products);
   } catch (exception) {
     console.error(exception);
