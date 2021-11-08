@@ -3,15 +3,21 @@ import crypto from "crypto";
 import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
-import { isBuyer, isUser, isUserVerified } from "src/lib/middlewares";
+import {
+  isBuyer,
+  isNotDeleted,
+  isUser,
+  isUserVerified,
+} from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 
 const route = express();
 
-route.get(
+route.post(
   "/pay",
   isUser,
+  isNotDeleted,
   isUserVerified,
   isBuyer,
   async (req: any, res, next) => {
@@ -19,10 +25,12 @@ route.get(
       pid: Joi.string().trim().required(),
     }).validate(req.body, { convert: true });
     if (error) {
+      console.log(error)
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }
 
+    console.log('here')
     const { pid: productId } = value;
 
     try {
@@ -43,10 +51,10 @@ route.get(
       });
 
       const body = {
-        amount: product.price,
+        amount: product.price * 100, //razorpay processess amount in Paise
         currency: "INR",
         accept_partial: false,
-        expire_by: Date.now() / 1000 + 60 * 20 | 0, 
+        expire_by: (Date.now() / 1000 + 60 * 20) | 0,
         reference_id: order.id,
         description: `Payment for 1 ${product.name}`,
         customer: {
@@ -72,16 +80,17 @@ route.get(
       );
       respond(res, 200, "Payment Link", response.data.short_url);
     } catch (exception) {
-      console.log(exception)
+      console.log(exception);
       respond(res, 500, ERROR.INTERNAL_ERROR);
       return;
     }
   }
 );
 
-route.get(
+route.post(
   "/validate",
   isUser,
+  isNotDeleted,
   isUserVerified,
   isBuyer,
   async (req, res, next) => {
@@ -91,6 +100,7 @@ route.get(
       orderId: Joi.string().trim().required(),
     }).validate(req.body, { convert: true });
     if (error) {
+      console.log(error)
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }

@@ -4,6 +4,7 @@ import Joi from "joi";
 import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
 import {
   isApprovedSellerOrAdmin,
+  isNotDeleted,
   isUser,
   isUserVerified,
 } from "src/lib/middlewares";
@@ -64,6 +65,7 @@ route.get("/", async (req, res, next) => {
 route.post(
   "/",
   isUser,
+  isNotDeleted,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req: any, res, next) => {
@@ -156,6 +158,7 @@ route.get("/:productId", async (req, res, next) => {
 route.patch(
   "/:productId",
   isUser,
+  isNotDeleted,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req, res, next) => {
@@ -189,6 +192,7 @@ route.patch(
 route.delete(
   "/:productId",
   isUser,
+  isNotDeleted,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req, res, next) => {

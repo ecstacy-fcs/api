@@ -1,9 +1,18 @@
-import { ACCESS_DENIED, UNVERIFIED_ACCOUNT } from "src/constants/errors";
+import {
+  ACCESS_DENIED,
+  ACCOUNT_DELETED,
+  UNVERIFIED_ACCOUNT,
+} from "src/constants/errors";
 import { respond } from "./request-respond";
 
 export const isUser = (req, res, next) => {
   if (req.user) return next();
   respond(res, 403, ACCESS_DENIED);
+};
+
+export const isNotDeleted = (req, res, next) => {
+  if (req.user && !req.user.deleted) return next();
+  respond(res, 403, ACCOUNT_DELETED);
 };
 
 export const isAdmin = (req, res, next) => {
@@ -34,5 +43,10 @@ export const isSellerApproved = (req, res, next) => {
 export const isApprovedSellerOrAdmin = (req, res, next) => {
   if (req.user?.adminProfile || req?.user?.sellerProfile?.approved)
     return next();
+  respond(res, 403, ACCESS_DENIED);
+};
+
+export const isVerifiedUserOrAdmin = (req, res, next) => {
+  if (req.user?.adminProfile || req?.user?.verified) return next();
   respond(res, 403, ACCESS_DENIED);
 };

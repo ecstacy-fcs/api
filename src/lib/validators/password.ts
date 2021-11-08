@@ -9,6 +9,6 @@ import Joi from "joi";
  * Maximum length: 22
  */
 const PASSWORD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,22}$/;
+  /^(?=[^A-Z\s]*[A-Z])(?=[^a-z\s]*[a-z])(?=[^\d\s]*\d)(?=\w*[\W_])\S{12,22}$/;
 
 export const schema = Joi.string().trim().pattern(PASSWORD_REGEX).required();
