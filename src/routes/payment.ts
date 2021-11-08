@@ -25,12 +25,11 @@ route.post(
       pid: Joi.string().trim().required(),
     }).validate(req.body, { convert: true });
     if (error) {
-      console.log(error)
+      console.log(error);
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }
 
-    console.log('here')
     const { pid: productId } = value;
 
     try {
@@ -100,7 +99,7 @@ route.post(
       orderId: Joi.string().trim().required(),
     }).validate(req.body, { convert: true });
     if (error) {
-      console.log(error)
+      console.log(error);
       respond(res, 400, ERROR.BAD_INPUT);
       return;
     }

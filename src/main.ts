@@ -1,28 +1,22 @@
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { json } from "body-parser";
-import {
-  isAdmin,
-  isNotDeleted,
-  isUser,
-  isBuyer,
-  isUserVerified,
-} from "src/lib/middlewares";
 import cors from "cors";
 import "dotenv/config";
 import express, { Request } from "express";
 import session from "express-session";
+import { isBuyer, isUser, isUserVerified } from "src/lib/middlewares";
 import { respond } from "./lib/request-respond";
 import sessionValidator from "./lib/validators/session";
 import prisma from "./prisma";
 import auth from "./routes/auth";
 import buy from "./routes/buy";
-import sell from "./routes/sell";
+import buyer from "./routes/buyers";
 import payment from "./routes/payment";
 import products from "./routes/products";
 import search from "./routes/search";
+import sell from "./routes/sell";
 import seller from "./routes/sellers";
 import user from "./routes/user";
-import buyer from "./routes/buyers";
 
 const app = express();
 
@@ -79,10 +73,14 @@ app.use("/payment", payment);
 app.use("/sellers", seller);
 app.use("/search", search);
 app.use("/users", user);
-app.use('/buyers', buyer);
+app.use("/buyers", buyer);
 
 app.get("/", async (req, res, next) => {
   respond(res, 200, "API Running");
+});
+
+app.all("*", (req, res, next) => {
+  respond(res, 404, "Route not found for request");
 });
 
 app.listen(process.env.PORT, () => {
