@@ -16,7 +16,7 @@ export default async function validate(req, res, next) {
     where: { sid: req.sessionID },
   });
   if (!session) {
-    respond(res, 400, ERROR.BAD_INPUT);
+    respond(res, req, 400, ERROR.BAD_INPUT);
     return;
   }
 
@@ -29,7 +29,7 @@ export default async function validate(req, res, next) {
     currentTime.getTime() - new Date(req.session.loginTime).getTime() >=
     absoluteTimeout
   ) {
-    req.session.regenerate(() => respond(res, 401, ERROR.SESSION_TIMEOUT));
+    req.session.regenerate(() => respond(res, req, 401, ERROR.SESSION_TIMEOUT));
     return;
   }
 
@@ -39,7 +39,7 @@ export default async function validate(req, res, next) {
     currentTime.getTime() - new Date(req.session.lastActive).getTime() >=
     idleTimeout
   ) {
-    req.session.regenerate(() => respond(res, 401, ERROR.SESSION_TIMEOUT));
+    req.session.regenerate(() => respond(res, req, 401, ERROR.SESSION_TIMEOUT));
     return;
   }
 
@@ -51,7 +51,7 @@ export default async function validate(req, res, next) {
     // Delete invalid session
     await prisma.session.delete({ where: { sid: req.sessionID } });
     req.session.destroy(() => {
-      respond(res, 400, ERROR.ACCOUNT_NOT_FOUND, undefined);
+      respond(res, req, 400, ERROR.ACCOUNT_NOT_FOUND, undefined);
     });
     return;
   }

@@ -41,10 +41,10 @@ route.get(
           },
         },
       });
-      respond(res, 200, "Success", sellers);
+      respond(res, req, 200, "Success", sellers);
     } catch (error) {
       console.error(error);
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -110,12 +110,12 @@ route.get(
         },
       });
       if (!seller || seller.user.deleted) {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 200, "Success", seller);
+      respond(res, req, 200, "Success", seller);
     } catch (error) {
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -133,14 +133,14 @@ route.patch(
         data: { approved: true },
       });
       log(req, "UPDATE", `Seller ${req.params.id} approved`);
-      respond(res, 200);
+      respond(res, req, 200);
     } catch (error) {
       // Record not found
       if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -156,15 +156,16 @@ route.patch(
       await prisma.seller.delete({
         where: { id: req.params.id },
       });
+
       log(req, "UPDATE", `Seller ${req.params.id} denied`);
-      respond(res, 200);
+      respond(res, req, 200);
     } catch (error) {
       // Record not found
       if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );

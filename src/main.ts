@@ -24,6 +24,7 @@ import search from "./routes/search";
 import sell from "./routes/sell";
 import seller from "./routes/sellers";
 import user from "./routes/user";
+import { csrfProtection } from "./csrf";
 
 const app = express();
 
@@ -66,6 +67,8 @@ app.use(
     }),
   })
 );
+
+app.use("/", csrfProtection)
 app.use(sessionValidator);
 
 // All the other API routes
@@ -81,12 +84,12 @@ app.use("/users", user);
 app.use("/buyers", buyer);
 app.use("/events", isUser, isUserVerified, isNotDeleted, isAdmin, events);
 app.get("/", async (req, res, next) => {
-  respond(res, 200, "API Running");
+  respond(res, req, 200, "API Running");
 });
 
 // Catch all uncaught routes and 404
 app.all("*", (req, res, next) => {
-  respond(res, 404, "Route not found for request");
+  respond(res, req, 404, "Route not found for request");
 });
 
 app.listen(process.env.PORT, () => {

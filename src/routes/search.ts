@@ -14,13 +14,20 @@ const convertImagePath = (product) => {
 route.get("/:keyword", async (req, res, next) => {
   const keyword = req.params.keyword;
   if (!keyword) {
-    respond(res, 400, BAD_INPUT);
+    respond(res, req, 400, BAD_INPUT);
     return;
   }
   try {
     const products = await prisma.product.findMany({
       where: {
-        seller: { approved: true },
+        banned: false,
+        seller: {
+          approved: true,
+          user: { 
+            banned: false,
+            deleted: false,
+          },
+        },
         OR: [
           { name: { contains: keyword } },
           { category: { name: { contains: keyword } } },
@@ -46,10 +53,10 @@ route.get("/:keyword", async (req, res, next) => {
       },
     });
     products.forEach(convertImagePath);
-    respond(res, 200, "search results", products);
+    respond(res, req, 200, "search results", products);
   } catch (exception) {
     console.error(exception);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 

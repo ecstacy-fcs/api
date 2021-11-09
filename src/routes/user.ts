@@ -34,9 +34,9 @@ route.get("/", isAdmin, isNotDeleted, async (req, res, next) => {
       },
     });
     const usersWithoutPassword = users.map(({ password, ...rest }) => rest);
-    respond(res, 200, "Success", usersWithoutPassword);
+    respond(res, req, 200, "Success", usersWithoutPassword);
   } catch (err) {
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -48,7 +48,7 @@ route.get(
     const { userId } = req.params;
     if (userId === req.user.id) {
       const { password, ...rest } = req.user;
-      respond(res, 200, "Success", rest);
+      respond(res, req, 200, "Success", rest);
       return;
     }
     if (req.user.adminProfile)
@@ -62,15 +62,15 @@ route.get(
           },
         });
         if (!user || user.deleted) {
-          respond(res, 404, ACCOUNT_NOT_FOUND);
+          respond(res, req, 404, ACCOUNT_NOT_FOUND);
           return;
         }
         const { password, ...rest } = user;
-        respond(res, 200, "Success", rest);
+        respond(res, req, 200, "Success", rest);
       } catch (err) {
-        respond(res, 500, INTERNAL_ERROR);
+        respond(res, req, 500, INTERNAL_ERROR);
       }
-    respond(res, 403, ACCESS_DENIED);
+    respond(res, req, 403, ACCESS_DENIED);
   }
 );
 
@@ -85,7 +85,7 @@ route.patch(
       address: Joi.string().trim().max(100).optional(),
     }).validate(req.body, { convert: true });
     if (error) {
-      respond(res, 400, BAD_INPUT);
+      respond(res, req, 400, BAD_INPUT);
       return;
     }
     try {
@@ -93,7 +93,7 @@ route.patch(
       if (req.user.adminProfile || userId === req.user.id) {
         const user = prisma.user.findUnique({ where: { id: userId } });
         if (!user) {
-          respond(res, 404, ACCOUNT_NOT_FOUND);
+          respond(res, req, 404, ACCOUNT_NOT_FOUND);
           return;
         }
         await prisma.user.update({
@@ -104,14 +104,15 @@ route.patch(
             address: value.address,
           },
         });
+
         log(req, "UPDATE", `User ${userId} updated`);
-        respond(res, 200, "Success");
+        respond(res, req, 200, "Success");
         return;
       }
-      respond(res, 403, ACCESS_DENIED);
+      respond(res, req, 403, ACCESS_DENIED);
       return;
     } catch (err) {
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -128,7 +129,7 @@ route.delete(
         otp: Joi.string().trim().required(),
       }).validate(req.body, { convert: true }));
       if (error) {
-        respond(res, 400, BAD_INPUT);
+        respond(res, req, 400, BAD_INPUT);
         return;
       }
     }
@@ -137,11 +138,11 @@ route.delete(
       if (req.user.adminProfile || userId === req.user.id) {
         const user = prisma.user.findUnique({ where: { id: userId } });
         if (!user) {
-          respond(res, 404, ACCOUNT_NOT_FOUND);
+          respond(res, req, 404, ACCOUNT_NOT_FOUND);
           return;
         }
         if (req.user.adminProfile) {
-          respond(res, 400, "Admin user cannot be deleted");
+          respond(res, req, 400, "Admin user cannot be deleted");
           return;
         }
         if (req.adminProfile) {
@@ -149,8 +150,9 @@ route.delete(
             where: { id: userId },
             data: { deleted: true },
           });
+
           log(req, "DELETE", `User ${userId} deleted by admin`);
-          respond(res, 200, "Success");
+          respond(res, req, 200, "Success");
           return;
         }
         const verificationToken = await prisma.token.findFirst({
@@ -160,7 +162,7 @@ route.delete(
             type: "DELETE_ACCOUNT",
           },
         });
-        if (!verifyToken(verificationToken, res)) return;
+        if (!verifyToken(verificationToken, res, req)) return;
         await prisma.token.update({
           where: { id: verificationToken.id },
           data: { valid: false },
@@ -170,15 +172,16 @@ route.delete(
           where: { id: userId },
           data: { deleted: true },
         });
+
         log(req, "DELETE", `User ${userId} deleted by user`);
-        respond(res, 200, "Account deleted");
+        respond(res, req, 200, "Account deleted");
         return;
       }
-      respond(res, 403, ACCESS_DENIED);
+      respond(res, req, 403, ACCESS_DENIED);
       return;
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -202,7 +205,7 @@ route.post(
         },
       });
       if (verificationToken) {
-        respond(res, 400, "Verification token already sent to email!");
+        respond(res, req, 400, "Verification token already sent to email!");
         return;
       }
       await prisma.token.updateMany({
@@ -229,12 +232,12 @@ route.post(
     </p>`,
         });
       } catch (err) {
-        respond(res, 500, "There was an error sending the email");
+        respond(res, req, 500, "There was an error sending the email");
         return;
       }
-      respond(res, 200, "Email sent");
+      respond(res, req, 200, "Email sent");
     } catch (err) {
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -251,14 +254,14 @@ route.post(
         where: { id: userId },
         data: { banned: true },
       });
-      respond(res, 200, "Success");
+      respond(res, req, 200, "Success");
     } catch (error) {
       // Record not found
       if (error.code === "P2025") {
-        respond(res, 404, ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -275,14 +278,14 @@ route.post(
         where: { id: userId },
         data: { banned: false },
       });
-      respond(res, 200, "Success");
+      respond(res, req, 200, "Success");
     } catch (error) {
       // Record not found
       if (error.code === "P2025") {
-        respond(res, 404, ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );

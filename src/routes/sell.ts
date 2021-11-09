@@ -36,10 +36,10 @@ route.get(
           products: true,
         },
       });
-      respond(res, 200, "success", seller);
+      respond(res, req, 200, "success", seller);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -58,8 +58,9 @@ route.post(
         approvalDocument: req.file.filename,
       },
     });
+
     log(req, "CREATE", "Seller profile created with proposal");
-    respond(res, 200, "success");
+    respond(res, req, 200, "success");
   }
 );
 
