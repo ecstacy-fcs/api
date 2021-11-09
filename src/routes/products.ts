@@ -34,7 +34,7 @@ const route = express();
 const productSchema = Joi.object({
   name: Joi.string().trim().max(28).required(),
   description: Joi.string().trim().max(124).required(),
-  price: Joi.number().positive().max(100000).min(1).required(),
+  price: Joi.number().positive().max(15000).min(1).required(),
   category: Joi.string().trim().required(),
 });
 
@@ -47,26 +47,14 @@ const convertImagePath = (product) => {
 route.get("/", async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
-      where:{
-        AND:[
-          {
+      where: {
+        banned: false,
+        seller: {
+          user: {
             banned: false,
+            deleted: false,
           },
-          {
-            seller:{
-              user:{
-                AND:[
-                  {
-                    banned: false,
-                  },
-                  {
-                    deleted: false,
-                  },
-                ],
-              }
-            }
-          }
-        ]
+        },
       },
       include: {
         seller: {
@@ -96,57 +84,53 @@ route.get("/", async (req, res, next) => {
   }
 });
 
-route.get('/banned', isUser, isUserVerified, isNotDeleted, isNotBanned, isAdmin, async (req, res, next) => {
-  try {
-    const products = await prisma.product.findMany({
-      where:{
-        AND:[
-          {
-            banned: true,
-          },
-          {
-            seller:{
-              user:{
-                AND:[
-                  {
-                    banned: false,
-                  },
-                  {
-                    deleted: false,
-                  },
-                ],
-              }
-            }
-          }
-        ]
-      },
-      include: {
-        seller: {
-          select: {
-            id: true,
+route.get(
+  "/banned",
+  isUser,
+  isUserVerified,
+  isNotDeleted,
+  isNotBanned,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const products = await prisma.product.findMany({
+        where: {
+          banned: true,
+          seller: {
             user: {
-              select: {
-                name: true,
-              },
+              banned: false,
+              deleted: false,
             },
           },
         },
-        images: {
-          select: {
-            path: true,
+        include: {
+          seller: {
+            select: {
+              id: true,
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+            },
           },
+          images: {
+            select: {
+              path: true,
+            },
+          },
+          category: true,
         },
-        category: true,
-      },
-    });
+      });
 
-    products.forEach(convertImagePath);
-    respond(res, 200, "all products", products);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+      products.forEach(convertImagePath);
+      respond(res, 200, "all products", products);
+    } catch (err) {
+      console.error(err);
+      respond(res, 500, INTERNAL_ERROR);
+    }
   }
-});
+);
 
 route.post(
   "/",
@@ -237,40 +221,55 @@ route.patch(
   }
 );
 
-route.post('/:productId/ban', isUser, isUserVerified, isNotDeleted, isNotBanned, isAdmin, async (req, res, next) => {
-  try {
-    const product = await prisma.product.update({
-      where: {
-        id: req.params.productId,
-      },
-      data: {
-        banned: true,
-      },
-    });
-    respond(res, 200, "success", product);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+route.post(
+  "/:productId/ban",
+  isUser,
+  isUserVerified,
+  isNotDeleted,
+  isNotBanned,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const product = await prisma.product.update({
+        where: {
+          id: req.params.productId,
+        },
+        data: {
+          banned: true,
+        },
+      });
+      respond(res, 200, "success", product);
+    } catch (err) {
+      console.error(err);
+      respond(res, 500, INTERNAL_ERROR);
+    }
   }
-});
+);
 
-route.post('/:productId/unban', isUser, isUserVerified, isNotDeleted, isNotBanned, isAdmin, async (req, res, next) => {
-  try {
-    const product = await prisma.product.update({
-      where: {
-        id: req.params.productId,
-      },
-      data: {
-        banned: false,
-      },
-    });
-    respond(res, 200, "success", product);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+route.post(
+  "/:productId/unban",
+  isUser,
+  isUserVerified,
+  isNotDeleted,
+  isNotBanned,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const product = await prisma.product.update({
+        where: {
+          id: req.params.productId,
+        },
+        data: {
+          banned: false,
+        },
+      });
+      respond(res, 200, "success", product);
+    } catch (err) {
+      console.error(err);
+      respond(res, 500, INTERNAL_ERROR);
+    }
   }
-});
-
+);
 
 route.get("/:productId", async (req, res, next) => {
   try {
