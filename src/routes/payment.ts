@@ -3,6 +3,7 @@ import crypto from "crypto";
 import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
   isBuyer,
   isNotDeleted,
@@ -48,6 +49,7 @@ route.post(
           quantity: 1,
         },
       });
+      log(req, "CREATE", `Order created for product ${productId}`);
 
       const body = {
         amount: product.price * 100, //razorpay processess amount in Paise
@@ -77,7 +79,10 @@ route.post(
           },
         }
       );
+
+      log(req, "CREATE", `Payment request generated for order ${order.id}`);
       respond(res, req, 200, "Payment Link", response.data.short_url);
+
     } catch (exception) {
       console.error(exception);
       respond(res, req, 500, ERROR.INTERNAL_ERROR);

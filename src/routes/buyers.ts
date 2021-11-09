@@ -21,12 +21,12 @@ route.get(
     try {
       const buyers = await prisma.buyer.findMany({
         where: {
-            user:{
-                deleted: false,
-                adminProfile:{
-                    is: null
-                }
-            }
+          user: {
+            deleted: false,
+            adminProfile: {
+              is: null,
+            },
+          },
         },
         select: {
           id: true,
@@ -86,7 +86,5 @@ route.get(
     }
   }
 );
-
-
 
 export default route;

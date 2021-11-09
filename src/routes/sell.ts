@@ -1,7 +1,8 @@
 import express from "express";
 import multer from "multer";
 import { INTERNAL_ERROR } from "src/constants/errors";
-import { isNotBanned, isNotDeleted, isSeller, isUser } from "src/lib/middlewares";
+import { log } from "src/lib/log";
+import { isNotBanned, isNotDeleted, isUser } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 import { v4 as uuidv4 } from "uuid";
@@ -20,27 +21,28 @@ const upload = multer({
 
 const route = express();
 
-
-route.get("/", isSeller , isNotDeleted, isNotBanned, async (req: any, res, next) => {
-  try {
-    const seller = await prisma.seller.findUnique({
-      where: {
-        userId: req.user.id,
-      },
-      include: {
-        products: true,
-      },
-    });
-    respond(res, req, 200, "success", seller);
-  } catch (err) {
-    console.error(err);
-    respond(res, req, 500, INTERNAL_ERROR);
+route.get(
+  "/",
+  isUser,
+  isNotDeleted,
+  isNotBanned,
+  async (req: any, res, next) => {
+    try {
+      const seller = await prisma.seller.findUnique({
+        where: {
+          userId: req.user.id,
+        },
+        include: {
+          products: true,
+        },
+      });
+      respond(res, req, 200, "success", seller);
+    } catch (err) {
+      console.error(err);
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
-});
-
-route.get("/proposals", async (req, res, next) => {
-  // get all seller proposals
-});
+);
 
 route.post(
   "/proposal",
@@ -56,12 +58,10 @@ route.post(
         approvalDocument: req.file.filename,
       },
     });
+
+    log(req, "CREATE", "Seller profile created with proposal");
     respond(res, req, 200, "success");
   }
 );
-
-route.put("/proposal", async (req, res, next) => {
-  // approve or reject a proposal
-});
 
 export default route;

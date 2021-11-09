@@ -1,5 +1,7 @@
 import express from "express";
+import path from "path";
 import * as ERROR from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
   isAdmin,
   isNotDeleted,
@@ -21,16 +23,13 @@ route.get(
     try {
       const sellers = await prisma.seller.findMany({
         where: {
-          approved:
-            req.query.approved === undefined || req.query.approved === "true",
-            user:{
-                deleted:false
-            }
+          user: {
+            deleted: false,
+          },
         },
         select: {
           id: true,
           approved: true,
-          approvalDocument: true,
           user: {
             select: {
               id: true,
@@ -51,6 +50,38 @@ route.get(
 );
 
 route.get(
+  "/:id/proposal",
+  isUser,
+  isNotDeleted,
+  isUserVerified,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const seller = await prisma.seller.findUnique({
+        where: {
+          id: req.params.id,
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      if (!seller || seller.user.deleted) {
+        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        return;
+      }
+
+      res.sendFile(
+        path.resolve(__dirname, "../uploads/proposals", seller.approvalDocument)
+      );
+    } catch (err) {
+      console.error(err);
+      respond(res, 500, ERROR.INTERNAL_ERROR);
+    }
+  }
+);
+
+route.get(
   "/:id",
   isUser,
   isNotDeleted,
@@ -65,7 +96,7 @@ route.get(
         select: {
           id: true,
           approved: true,
-          approvalDocument: true,
+          // approvalDocument: true,
           user: {
             select: {
               id: true,
@@ -95,12 +126,13 @@ route.patch(
   isNotDeleted,
   isUserVerified,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       await prisma.seller.update({
         where: { id: req.params.id },
         data: { approved: true },
       });
+      log(req, "UPDATE", `Seller ${req.params.id} approved`);
       respond(res, req, 200);
     } catch (error) {
       // Record not found
@@ -119,11 +151,13 @@ route.patch(
   isNotDeleted,
   isUserVerified,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       await prisma.seller.delete({
         where: { id: req.params.id },
       });
+
+      log(req, "UPDATE", `Seller ${req.params.id} denied`);
       respond(res, req, 200);
     } catch (error) {
       // Record not found
@@ -136,5 +170,28 @@ route.patch(
   }
 );
 
+route.delete(
+  "/:id",
+  isUser,
+  isNotDeleted,
+  isUserVerified,
+  isAdmin,
+  async (req: any, res, next) => {
+    try {
+      await prisma.seller.delete({
+        where: { id: req.params.id },
+      });
+      log(req, "UPDATE", `Seller ${req.params.id} deleted`);
+      respond(res, 200);
+    } catch (error) {
+      // Record not found
+      if (error.code === "P2025") {
+        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        return;
+      }
+      respond(res, 500, ERROR.INTERNAL_ERROR);
+    }
+  }
+);
 
 export default route;
