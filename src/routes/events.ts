@@ -9,6 +9,7 @@ route.get("/", async (req, res, next) => {
   try {
     const events = await prisma.event.findMany({
       include: { actor: true },
+      orderBy: { time: "desc" },
     });
     respond(res, 200, "Success", events);
   } catch (err) {
