@@ -239,41 +239,52 @@ route.post(
   }
 );
 
-route.post('/:userID/ban', isUser, isNotDeleted, isAdmin, async (req: any, res, next) => {
-  try {
-    const { userID } = req.params;
-    await prisma.user.update({
-      where: { id: userID },
-      data: { banned: true },
-    });
-    respond(res, 200, "Success");
-  } catch (error) {
-    // Record not found
-    if (error.code === "P2025") {
-      respond(res, 404, ACCOUNT_NOT_FOUND);
-      return;
+route.post(
+  "/:userId/ban",
+  isUser,
+  isNotDeleted,
+  isAdmin,
+  async (req: any, res, next) => {
+    try {
+      const { userId } = req.params;
+      await prisma.user.update({
+        where: { id: userId },
+        data: { banned: true },
+      });
+      respond(res, 200, "Success");
+    } catch (error) {
+      // Record not found
+      if (error.code === "P2025") {
+        respond(res, 404, ACCOUNT_NOT_FOUND);
+        return;
+      }
+      respond(res, 500, INTERNAL_ERROR);
     }
-    respond(res, 500, INTERNAL_ERROR);
   }
-});
+);
 
-
-route.post('/:userID/unban', isUser, isNotDeleted, isAdmin, async (req, res, next) => {
-  try {
-    const { userID } = req.params;
-    await prisma.user.update({
-      where: { id: userID },
-      data: { banned: false },
-    });
-    respond(res, 200, "Success");
-  } catch (error) {
-    // Record not found
-    if (error.code === "P2025") {
-      respond(res, 404, ACCOUNT_NOT_FOUND);
-      return;
+route.post(
+  "/:userId/unban",
+  isUser,
+  isNotDeleted,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const { userId } = req.params;
+      await prisma.user.update({
+        where: { id: userId },
+        data: { banned: false },
+      });
+      respond(res, 200, "Success");
+    } catch (error) {
+      // Record not found
+      if (error.code === "P2025") {
+        respond(res, 404, ACCOUNT_NOT_FOUND);
+        return;
+      }
+      respond(res, 500, INTERNAL_ERROR);
     }
-    respond(res, 500, INTERNAL_ERROR);
   }
-});
+);
 
 export default route;

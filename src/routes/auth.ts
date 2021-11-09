@@ -146,7 +146,7 @@ route.post("/login", async (req: any, res, next) => {
       );
       return;
     }
-    if(user.banned){
+    if (user.banned) {
       respond(res, 403, "Account banned. Contact admin to unban.");
       return;
     }
