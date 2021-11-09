@@ -2,12 +2,7 @@ import express from "express";
 import multer from "multer";
 import { INTERNAL_ERROR } from "src/constants/errors";
 import { log } from "src/lib/log";
-import {
-  isNotBanned,
-  isNotDeleted,
-  isSeller,
-  isUser,
-} from "src/lib/middlewares";
+import { isNotBanned, isNotDeleted, isUser } from "src/lib/middlewares";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 import { v4 as uuidv4 } from "uuid";
@@ -28,7 +23,7 @@ const route = express();
 
 route.get(
   "/",
-  isSeller,
+  isUser,
   isNotDeleted,
   isNotBanned,
   async (req: any, res, next) => {

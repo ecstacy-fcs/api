@@ -30,7 +30,6 @@ route.get(
         select: {
           id: true,
           approved: true,
-          // approvalDocument: true,
           user: {
             select: {
               id: true,
