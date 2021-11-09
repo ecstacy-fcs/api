@@ -26,7 +26,10 @@ import seller from "./routes/sellers";
 import user from "./routes/user";
 import { csrfProtection } from "./csrf";
 
+const helmet = require("helmet");
 const app = express();
+
+app.use(helmet());
 
 // We trust our Nginx proxy to supply us with correct headers
 app.set("trust proxy", true);
