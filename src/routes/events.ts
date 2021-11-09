@@ -11,9 +11,9 @@ route.get("/", async (req, res, next) => {
       include: { actor: true },
       orderBy: { time: "desc" },
     });
-    respond(res, 200, "Success", events);
+    respond(res, req, 200, "Success", events);
   } catch (err) {
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 

@@ -67,7 +67,7 @@ route.get(
       });
 
       if (!seller || seller.user.deleted) {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
 
@@ -76,7 +76,7 @@ route.get(
       );
     } catch (err) {
       console.error(err);
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -182,14 +182,14 @@ route.delete(
         where: { id: req.params.id },
       });
       log(req, "UPDATE", `Seller ${req.params.id} deleted`);
-      respond(res, 200);
+      respond(res, req, 200);
     } catch (error) {
       // Record not found
       if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
