@@ -38,6 +38,7 @@
     "bcrypt": "^5.0.1",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
+    "csurf": "^1.11.0",
     "dayjs": "^1.10.7",
     "deep-email-validator": "^0.1.18",
     "dotenv": "^10.0.0",

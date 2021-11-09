@@ -50,7 +50,8 @@ route.get("/", async (req, res, next) => {
       where: {
         banned: false,
         seller: {
-          user: {
+          approved: true,
+          user: { 
             banned: false,
             deleted: false,
           },
@@ -77,10 +78,10 @@ route.get("/", async (req, res, next) => {
     });
 
     products.forEach(convertImagePath);
-    respond(res, 200, "all products", products);
+    respond(res, req, 200, "all products", products);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -124,10 +125,10 @@ route.get(
       });
 
       products.forEach(convertImagePath);
-      respond(res, 200, "all products", products);
+      respond(res, req, 200, "all products", products);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -143,7 +144,7 @@ route.post(
       convert: true,
     });
     if (error) {
-      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
+      respond(res, req, 400, `${BAD_INPUT}: ${error.message}`);
       return;
     }
 
@@ -157,10 +158,10 @@ route.post(
           categoryId: value.category,
         },
       });
-      respond(res, 200, "success", product);
+      respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -168,10 +169,10 @@ route.post(
 route.get("/categories", async (req, res, next) => {
   try {
     const categories = await prisma.productCategory.findMany();
-    respond(res, 200, "success", categories);
+    respond(res, req, 200, "success", categories);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -191,7 +192,7 @@ route.post(
         },
       });
     });
-    respond(res, 200, "success");
+    respond(res, req, 200, "success");
   }
 );
 
@@ -217,7 +218,7 @@ route.patch(
         },
       });
     });
-    respond(res, 200, "success");
+    respond(res, req, 200, "success");
   }
 );
 
@@ -238,10 +239,10 @@ route.post(
           banned: true,
         },
       });
-      respond(res, 200, "success", product);
+      respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -263,10 +264,10 @@ route.post(
           banned: false,
         },
       });
-      respond(res, 200, "success", product);
+      respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -295,10 +296,10 @@ route.get("/:productId", async (req, res, next) => {
     product.images.forEach((image) => {
       image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
     });
-    respond(res, 200, "success", product);
+    respond(res, req, 200, "success", product);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -313,7 +314,7 @@ route.patch(
       convert: true,
     });
     if (error) {
-      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
+      respond(res, req, 400, `${BAD_INPUT}: ${error.message}`);
       return;
     }
     try {
@@ -321,7 +322,7 @@ route.patch(
         where: { id: req.params.productId },
       });
       if (!product) {
-        respond(res, 404);
+        respond(res, req, 404);
         return;
       }
       product = await prisma.product.update({
@@ -333,10 +334,10 @@ route.patch(
           categoryId: value.category,
         },
       });
-      respond(res, 200, "success", product);
+      respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -353,16 +354,16 @@ route.delete(
         where: { id: req.params.productId },
       });
       if (!product) {
-        respond(res, 404);
+        respond(res, req, 404);
         return;
       }
       await prisma.product.delete({
         where: { id: req.params.productId },
       });
-      respond(res, 200, "success");
+      respond(res, req, 200, "success");
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -395,15 +396,15 @@ route.get("/category/:categoryId", async (req, res, next) => {
       },
     });
     if (!category) {
-      respond(res, 404);
+      respond(res, req, 404);
       return;
     }
 
     category.products.forEach(convertImagePath);
-    respond(res, 200, "success", category.products);
+    respond(res, req, 200, "success", category.products);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -435,15 +436,15 @@ route.get("/seller/:sellerId", async (req, res, next) => {
       },
     });
     if (!seller) {
-      respond(res, 404);
+      respond(res, req, 404);
       return;
     }
 
     seller.products.forEach(convertImagePath);
-    respond(res, 200, "success", seller.products);
+    respond(res, req, 200, "success", seller.products);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 

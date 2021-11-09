@@ -25,10 +25,10 @@ route.post(
           productId: productId,
         },
       });
-      respond(res, 200, "success", order);
+      respond(res, req, 200, "success", order);
     } catch (err) {
       console.error(err);
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
       return;
     }
   }
@@ -45,10 +45,10 @@ route.get(
       const orders = await prisma.orders.findMany({
         where: { buyer: { userId: req.user.id } },
       });
-      respond(res, 200, "success", orders);
+      respond(res, req, 200, "success", orders);
     } catch (err) {
       console.error(err);
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );

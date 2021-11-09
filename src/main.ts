@@ -17,6 +17,8 @@ import sell from "./routes/sell";
 import seller from "./routes/sellers";
 import user from "./routes/user";
 import buyer from "./routes/buyers";
+import { csrfProtection } from "./csrf";
+
 const app = express();
 
 const parseJSON = json({ limit: "1mb" });
@@ -61,6 +63,7 @@ app.use(
   })
 );
 
+app.use("/", csrfProtection)
 app.use(sessionValidator);
 //idleTimeout:3*60*60*1000, absoluteTimeout:2*24*60*60*1000
 
@@ -75,11 +78,11 @@ app.use("/users", user);
 app.use("/buyers", buyer);
 
 app.get("/", async (req, res, next) => {
-  respond(res, 200, "API Running");
+  respond(res, req, 200, "API Running");
 });
 
 app.all("*", (req, res, next) => {
-  respond(res, 404, "Route not found for request");
+  respond(res, req, 404, "Route not found for request");
 });
 
 app.listen(process.env.PORT, () => {
