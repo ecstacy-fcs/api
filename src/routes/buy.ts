@@ -1,5 +1,4 @@
 import express from "express";
-import { userInfo } from "os";
 import * as ERROR from "src/constants/errors";
 import { log } from "src/lib/log";
 import {
