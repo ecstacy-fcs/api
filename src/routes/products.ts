@@ -319,6 +319,11 @@ route.get("/:productId", async (req, res, next) => {
       },
     });
 
+    if (!product) {
+      respond(res, req, 404, "Product not found.", null);
+      return;
+    }
+
     convertImagePath(product);
     respond(res, req, 200, "success", product);
   } catch (err) {
