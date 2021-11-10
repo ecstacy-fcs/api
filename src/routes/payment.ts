@@ -27,6 +27,12 @@ route.post(
     const { value, error } = Joi.object({
       pid: Joi.string().trim().required(),
     }).validate(req.body, { convert: true });
+
+    if (!req.user.address || !req.user.phoneNumber) {
+      respond(res, req, 400, ERROR.BAD_REQUEST);
+      return;
+    }
+
     if (error) {
       console.error(error);
       respond(res, req, 400, ERROR.BAD_INPUT);
@@ -36,16 +42,6 @@ route.post(
     const { pid: productId } = value;
 
     try {
-      const user = await prisma.user.findUnique({
-        where: {
-          id: req.user.id,
-        },
-      });
-      if (!user.address || !user.phoneNumber) {
-        respond(res, req, 400, ERROR.BAD_REQUEST);
-        return;
-      }
-
       const product = await prisma.product.findUnique({
         where: { id: productId },
       });
