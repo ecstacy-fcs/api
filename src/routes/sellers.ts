@@ -1,4 +1,5 @@
 import express from "express";
+import { string } from "joi";
 import path from "path";
 import * as ERROR from "src/constants/errors";
 import { log } from "src/lib/log";
@@ -6,6 +7,7 @@ import {
   isAdmin,
   isNotBanned,
   isNotDeleted,
+  isSeller,
   isUser,
   isUserVerified,
 } from "src/lib/middlewares";
@@ -76,6 +78,49 @@ route.get(
       res.sendFile(
         path.resolve(__dirname, "../uploads/proposals", seller.approvalDocument)
       );
+    } catch (err) {
+      console.error(err);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
+    }
+  }
+);
+
+route.get(
+  "/:id/orders",
+  isUser,
+  isNotDeleted,
+  isUserVerified,
+  isSeller,
+  async (req, res, next) => {
+    try {
+      const orders = await prisma.orders.findMany({
+        where: {
+          product: {
+            sellerId: req.params.id,
+          },
+        },
+        select: {
+          id: true,
+          time: true,
+          buyer: {
+            select: {
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+          product: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      respond(res, req, 200, "success", orders);
     } catch (err) {
       console.error(err);
       respond(res, req, 500, ERROR.INTERNAL_ERROR);
