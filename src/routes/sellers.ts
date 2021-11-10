@@ -1,5 +1,4 @@
 import express from "express";
-import { string } from "joi";
 import path from "path";
 import * as ERROR from "src/constants/errors";
 import { log } from "src/lib/log";
@@ -76,7 +75,10 @@ route.get(
       }
 
       res.sendFile(
-        path.resolve(__dirname, "../uploads/proposals", seller.approvalDocument)
+        path.resolve(
+          `${process.env.UPLOADS_ROOT}/proposals`,
+          seller.approvalDocument
+        )
       );
     } catch (err) {
       console.error(err);
