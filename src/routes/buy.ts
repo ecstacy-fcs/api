@@ -70,13 +70,13 @@ route.get(
                   user: {
                     select: {
                       name: true,
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
       respond(res, req, 200, "success", orders);
     } catch (err) {
