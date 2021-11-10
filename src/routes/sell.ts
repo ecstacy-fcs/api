@@ -17,7 +17,7 @@ const upload = multer({
     fileSize: 1000000,
   },
   storage: multer.diskStorage({
-    destination: "./src/uploads/proposals",
+    destination: `${process.env.UPLOADS_ROOT}/proposals`,
     filename: async (req, file, cb) => {
       cb(null, `${uuidv4()}.pdf`);
     },
