@@ -36,6 +36,16 @@ route.post(
     const { pid: productId } = value;
 
     try {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: req.user.id,
+        },
+      });
+      if (!user.address || !user.phoneNumber) {
+        respond(res, req, 400, ERROR.BAD_REQUEST);
+        return;
+      }
+
       const product = await prisma.product.findUnique({
         where: { id: productId },
       });
