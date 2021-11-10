@@ -52,7 +52,12 @@ route.post(
           }
         }
       });
-      if (!product || product.seller.user.banned || product.seller.user.deleted || product.banned) {
+      if (!product) {
+        respond(res, req, 404, ERROR.PRODUCT_NOT_FOUND);
+        return;
+      }
+
+      if(product && product.seller.user.banned || product.seller.user.deleted || product.banned){
         respond(res, req, 404, ERROR.PRODUCT_NOT_FOUND);
         return;
       }
