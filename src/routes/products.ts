@@ -35,7 +35,7 @@ const route = express();
 
 const productSchema = Joi.object({
   name: Joi.string().trim().max(28).required(),
-  description: Joi.string().trim().max(124).required(),
+  description: Joi.string().trim().max(1024).required(),
   price: Joi.number().positive().max(15000).min(1).required(),
   category: Joi.string().trim().required(),
 });
