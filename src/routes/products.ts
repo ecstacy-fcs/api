@@ -6,6 +6,7 @@ import multer from "multer";
 import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
 import { log } from "src/lib/log";
 import {
+  catchError,
   isAdmin,
   isApprovedSellerOrAdmin,
   isNotBanned,
@@ -39,9 +40,9 @@ const productSchema = Joi.object({
   category: Joi.string().trim().required(),
 });
 
-const convertImagePath = (product) => {
+export const convertImagePath = (product) => {
   product.images.forEach((image) => {
-    image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
+    image.path = `/static/product-images/${image.path}`;
   });
 };
 
@@ -52,7 +53,7 @@ route.get("/", async (req, res, next) => {
         banned: false,
         seller: {
           approved: true,
-          user: { 
+          user: {
             banned: false,
             deleted: false,
           },
@@ -138,6 +139,7 @@ route.post(
   "/",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req: any, res, next) => {
@@ -183,25 +185,30 @@ route.post(
   "/:productId/images",
   isUser,
   isUserVerified,
+  isNotDeleted,
+  isNotBanned,
   isApprovedSellerOrAdmin,
-  upload.array("product-image", 3),
+  catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
-    console.log(req.files);
-    req.files.forEach(async (file) => {
-      const img = await prisma.productImage.create({
-        data: {
-          path: file.filename,
-          productId: req.params.productId,
-        },
+    try {
+      console.log(req.files);
+      req.files.forEach(async (file) => {
+        const img = await prisma.productImage.create({
+          data: {
+            path: file.filename,
+            productId: req.params.productId,
+          },
+        });
       });
-    });
-
-    log(
-      req,
-      "CREATE",
-      `Product images created for product ${req.params.productId}`
-    );
-    respond(res, req, 200, "success");
+      log(
+        req,
+        "CREATE",
+        `Product images created for product ${req.params.productId}`
+      );
+      respond(res, req, 200, "success");
+    } catch (err) {
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
 );
 
@@ -209,31 +216,35 @@ route.patch(
   "/:productId/images",
   isUser,
   isUserVerified,
+  isNotDeleted,
+  isNotBanned,
   isApprovedSellerOrAdmin,
-  upload.array("product-image", 3),
+  catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
-    console.log(req.files);
-    const prevData = await prisma.productImage.deleteMany({
-      where: {
-        productId: req.params.productId,
-      },
-    });
-
-    req.files.forEach(async (file) => {
-      const img = await prisma.productImage.create({
-        data: {
-          path: file.filename,
+    try {
+      console.log(req.files);
+      const prevData = await prisma.productImage.deleteMany({
+        where: {
           productId: req.params.productId,
         },
       });
-    });
-    
-    log(
-      req,
-      "UPDATE",
-      `Product images updated for product ${req.params.productId}`
-    );
-    respond(res, req, 200, "success");
+      req.files.forEach(async (file) => {
+        const img = await prisma.productImage.create({
+          data: {
+            path: file.filename,
+            productId: req.params.productId,
+          },
+        });
+      });
+      log(
+        req,
+        "UPDATE",
+        `Product images updated for product ${req.params.productId}`
+      );
+      respond(res, req, 200, "success");
+    } catch (err) {
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
 );
 
@@ -308,9 +319,7 @@ route.get("/:productId", async (req, res, next) => {
       },
     });
 
-    product.images.forEach((image) => {
-      image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
-    });
+    convertImagePath(product);
     respond(res, req, 200, "success", product);
   } catch (err) {
     console.error(err);
@@ -322,6 +331,7 @@ route.patch(
   "/:productId",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req: any, res, next) => {
@@ -363,6 +373,7 @@ route.delete(
   "/:productId",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req: any, res, next) => {

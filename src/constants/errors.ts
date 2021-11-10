@@ -12,3 +12,4 @@ export const PRODUCT_NOT_FOUND = "Invalid product ID";
 export const BAD_REQUEST = "Bad request";
 export const ACCOUNT_DELETED = "Account has been deleted";
 export const INVALID_EMAIL = "Please use a valid email";
+export const ACCOUNT_BANNED = "Account banned. Contact admin to unban.";

@@ -2,14 +2,9 @@ import express from "express";
 import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
 import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
+import { convertImagePath } from "./products";
 
 const route = express();
-
-const convertImagePath = (product) => {
-  product.images.forEach((image) => {
-    image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
-  });
-};
 
 route.get("/:keyword", async (req, res, next) => {
   const keyword = req.params.keyword;
@@ -23,7 +18,7 @@ route.get("/:keyword", async (req, res, next) => {
         banned: false,
         seller: {
           approved: true,
-          user: { 
+          user: {
             banned: false,
             deleted: false,
           },

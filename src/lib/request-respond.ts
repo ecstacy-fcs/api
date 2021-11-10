@@ -5,7 +5,7 @@ export const respond = (
   message?: string,
   data?: Record<string, any>,
   clearCookie?: boolean,
-  clearSession?: boolean,
+  clearSession?: boolean
 ) => {
   try {
     res.status(statusCode);
@@ -14,7 +14,7 @@ export const respond = (
       success: statusCode < 400,
       message,
       data,
-      csrfToken: clearSession? "" : req.csrfToken()
+      csrfToken: clearSession ? "" : req.csrfToken(),
     });
   } catch (err) {}
 };

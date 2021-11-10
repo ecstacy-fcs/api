@@ -3,6 +3,7 @@ import * as ERROR from "src/constants/errors";
 import { log } from "src/lib/log";
 import {
   isBuyer,
+  isNotBanned,
   isNotDeleted,
   isUser,
   isUserVerified,
@@ -15,6 +16,7 @@ route.post(
   "/product/:productId",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isBuyer,
   async (req: any, res, next) => {
@@ -40,6 +42,7 @@ route.get(
   "/orders",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isBuyer,
   async (req: any, res, next) => {

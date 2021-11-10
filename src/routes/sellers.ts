@@ -5,6 +5,7 @@ import * as ERROR from "src/constants/errors";
 import { log } from "src/lib/log";
 import {
   isAdmin,
+  isNotBanned,
   isNotDeleted,
   isSeller,
   isUser,
@@ -19,6 +20,7 @@ route.get(
   "/",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req, res, next) => {
@@ -130,6 +132,7 @@ route.get(
   "/:id",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req, res, next) => {
@@ -169,6 +172,7 @@ route.patch(
   "/:id/approve",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req: any, res, next) => {
@@ -194,6 +198,7 @@ route.patch(
   "/:id/deny",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isAdmin,
   async (req: any, res, next) => {

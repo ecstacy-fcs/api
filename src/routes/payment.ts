@@ -6,6 +6,7 @@ import * as ERROR from "src/constants/errors";
 import { log } from "src/lib/log";
 import {
   isBuyer,
+  isNotBanned,
   isNotDeleted,
   isUser,
   isUserVerified,
@@ -20,6 +21,7 @@ route.post(
   isUser,
   isNotDeleted,
   isUserVerified,
+  isNotBanned,
   isBuyer,
   async (req: any, res, next) => {
     const { value, error } = Joi.object({
@@ -82,7 +84,6 @@ route.post(
 
       log(req, "CREATE", `Payment request generated for order ${order.id}`);
       respond(res, req, 200, "Payment Link", response.data.short_url);
-
     } catch (exception) {
       console.error(exception);
       respond(res, req, 500, ERROR.INTERNAL_ERROR);
@@ -96,6 +97,7 @@ route.get(
   isUser,
   isNotDeleted,
   isUserVerified,
+  isNotBanned,
   isBuyer,
   async (req, res, next) => {
     const querySchema = Joi.string()
