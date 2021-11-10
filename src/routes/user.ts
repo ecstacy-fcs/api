@@ -265,6 +265,8 @@ route.post(
         where: { id: userId },
         data: { banned: true },
       });
+
+      log(req, "UPDATE", `User ${userId} banned`)
       respond(res, req, 200, "Success");
     } catch (error) {
       // Record not found
@@ -283,13 +285,15 @@ route.post(
   isNotDeleted,
   isNotBanned,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       const { userId } = req.params;
       await prisma.user.update({
         where: { id: userId },
         data: { banned: false },
       });
+
+      log(req, "UPDATE", `User ${userId} unbanned`);
       respond(res, req, 200, "Success");
     } catch (error) {
       // Record not found

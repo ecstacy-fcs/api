@@ -66,6 +66,7 @@ route.post("/register", async (req: any, res, next) => {
           verified: false,
         },
       });
+      log({ ...req, user }, "UPDATE", `Credentials updated for user ${user.id}`);
     } else {
       user = await prisma.user.create({
         data: {
@@ -74,7 +75,7 @@ route.post("/register", async (req: any, res, next) => {
           password: hashedPassword,
         },
       });
-      log({ ...req, user }, "CREATE", "User registered");
+      log({ ...req, user }, "CREATE", `New user ${user.id}, '${user.name}' registered`);
     }
   } catch (exception) {
     console.error(exception);
@@ -87,7 +88,7 @@ route.post("/register", async (req: any, res, next) => {
       data: { type: "EMAIL_VERIFICATION", userId: user.id },
     });
     log({ ...req, user }, "CREATE", "Email verification token created");
-    const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${user.id}`;
+    const verificationLink = `${process.env.API_BASE_URL}/auth/verify?token=${verificationToken.id}&userId=${user.email}`;
     try {
       // Send mail to user with verification token
       await mail({
@@ -99,6 +100,7 @@ route.post("/register", async (req: any, res, next) => {
   <code>${verificationLink}</code>
   </p>`,
       });
+      log({ ...req, user }, "CREATE", `Verification email sent to ${user.id}`);
     } catch (err) {
       respond(res, req, 500, "There was an error sending the email");
       return;

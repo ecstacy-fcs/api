@@ -162,7 +162,7 @@ route.post(
         },
       });
 
-      log(req, "CREATE", `Product ${product.id} created`);
+      log(req, "CREATE", `New product ${product.id} '${product.name}' added to marketplace`);
       respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
@@ -255,7 +255,7 @@ route.post(
   isNotDeleted,
   isNotBanned,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       const product = await prisma.product.update({
         where: {
@@ -265,6 +265,8 @@ route.post(
           banned: true,
         },
       });
+
+      log(req, "UPDATE", `Product ${req.params.productId} banned`);
       respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
@@ -280,7 +282,7 @@ route.post(
   isNotDeleted,
   isNotBanned,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       const product = await prisma.product.update({
         where: {
@@ -290,6 +292,7 @@ route.post(
           banned: false,
         },
       });
+      log(req, "UPDATE", `Product ${req.params.productId} unbanned`);
       respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
@@ -360,7 +363,7 @@ route.patch(
         },
       });
 
-      log(req, "UPDATE", `Product ${product.id} updated`);
+      log(req, "UPDATE", `Details of product ${product.id} updated`);
       respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);

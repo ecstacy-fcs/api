@@ -57,7 +57,7 @@ route.post(
           quantity: 1,
         },
       });
-      log(req, "CREATE", `Order created for product ${productId}`);
+      log(req, "CREATE", `Order ${order.id} created for product ${productId}`);
 
       const body = {
         amount: product.price * 100, //razorpay processess amount in Paise
@@ -105,7 +105,7 @@ route.get(
   isUserVerified,
   isNotBanned,
   isBuyer,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     const querySchema = Joi.string()
       .trim()
       .required()
@@ -140,6 +140,9 @@ route.get(
           where: { id: value.orderId },
           data: { status: true },
         });
+
+        log(req, "CREATE", `Payment recorded for order ${value.orderId}`);
+
         respond(res, req, 200, "Payment Successful", { status: true });
         return;
       } catch (exception) {
