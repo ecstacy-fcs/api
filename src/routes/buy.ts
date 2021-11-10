@@ -12,7 +12,6 @@ import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 const route = express();
 
-
 route.get(
   "/orders",
   isUser,

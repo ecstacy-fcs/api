@@ -162,7 +162,11 @@ route.post(
         },
       });
 
-      log(req, "CREATE", `New product ${product.id} '${product.name}' added to marketplace`);
+      log(
+        req,
+        "CREATE",
+        `New product ${product.id} '${product.name}' added to marketplace`
+      );
       respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);

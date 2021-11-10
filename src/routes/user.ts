@@ -266,7 +266,7 @@ route.post(
         data: { banned: true },
       });
 
-      log(req, "UPDATE", `User ${userId} banned`)
+      log(req, "UPDATE", `User ${userId} banned`);
       respond(res, req, 200, "Success");
     } catch (error) {
       // Record not found

@@ -66,7 +66,11 @@ route.post("/register", async (req: any, res, next) => {
           verified: false,
         },
       });
-      log({ ...req, user }, "UPDATE", `Credentials updated for user ${user.id}`);
+      log(
+        { ...req, user },
+        "UPDATE",
+        `Credentials updated for user ${user.id}`
+      );
     } else {
       user = await prisma.user.create({
         data: {
@@ -75,7 +79,11 @@ route.post("/register", async (req: any, res, next) => {
           password: hashedPassword,
         },
       });
-      log({ ...req, user }, "CREATE", `New user ${user.id}, '${user.name}' registered`);
+      log(
+        { ...req, user },
+        "CREATE",
+        `New user ${user.id}, '${user.name}' registered`
+      );
     }
   } catch (exception) {
     console.error(exception);

@@ -64,7 +64,11 @@ route.post(
           approvalDocument: req.file.filename,
         },
       });
-      log(req, "CREATE", `Seller ${req.user.id} '${req.user.name}' profile created with proposal`);
+      log(
+        req,
+        "CREATE",
+        `Seller ${req.user.id} '${req.user.name}' profile created with proposal`
+      );
       respond(res, req, 200, "success");
     } catch (err) {
       respond(res, req, 500, INTERNAL_ERROR);

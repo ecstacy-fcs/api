@@ -44,20 +44,24 @@ route.post(
     try {
       const product = await prisma.product.findUnique({
         where: { id: productId },
-        include:{
+        include: {
           seller: {
             include: {
-              user: true
-            }
-          }
-        }
+              user: true,
+            },
+          },
+        },
       });
       if (!product) {
         respond(res, req, 404, ERROR.PRODUCT_NOT_FOUND);
         return;
       }
 
-      if(product && product.seller.user.banned || product.seller.user.deleted || product.banned){
+      if (
+        (product && product.seller.user.banned) ||
+        product.seller.user.deleted ||
+        product.banned
+      ) {
         respond(res, req, 404, ERROR.PRODUCT_NOT_FOUND);
         return;
       }
