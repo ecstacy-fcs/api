@@ -40,7 +40,7 @@ const productSchema = Joi.object({
   category: Joi.string().trim().required(),
 });
 
-const convertImagePath = (product) => {
+export const convertImagePath = (product) => {
   product.images.forEach((image) => {
     image.path = `/static/product-images/${image.path}`;
   });
@@ -319,9 +319,7 @@ route.get("/:productId", async (req, res, next) => {
       },
     });
 
-    product.images.forEach((image) => {
-      image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
-    });
+    convertImagePath(product);
     respond(res, req, 200, "success", product);
   } catch (err) {
     console.error(err);
