@@ -6,6 +6,7 @@ import multer from "multer";
 import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
 import { log } from "src/lib/log";
 import {
+  catchError,
   isAdmin,
   isApprovedSellerOrAdmin,
   isNotBanned,
@@ -184,24 +185,27 @@ route.post(
   isUser,
   isUserVerified,
   isApprovedSellerOrAdmin,
-  upload.array("product-image", 3),
+  catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
-    console.log(req.files);
-    req.files.forEach(async (file) => {
-      const img = await prisma.productImage.create({
-        data: {
-          path: file.filename,
-          productId: req.params.productId,
-        },
+    try {
+      console.log(req.files);
+      req.files.forEach(async (file) => {
+        const img = await prisma.productImage.create({
+          data: {
+            path: file.filename,
+            productId: req.params.productId,
+          },
+        });
       });
-    });
-
-    log(
-      req,
-      "CREATE",
-      `Product images created for product ${req.params.productId}`
-    );
-    respond(res, req, 200, "success");
+      log(
+        req,
+        "CREATE",
+        `Product images created for product ${req.params.productId}`
+      );
+      respond(res, req, 200, "success");
+    } catch (err) {
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
 );
 
@@ -210,30 +214,32 @@ route.patch(
   isUser,
   isUserVerified,
   isApprovedSellerOrAdmin,
-  upload.array("product-image", 3),
+  catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
-    console.log(req.files);
-    const prevData = await prisma.productImage.deleteMany({
-      where: {
-        productId: req.params.productId,
-      },
-    });
-
-    req.files.forEach(async (file) => {
-      const img = await prisma.productImage.create({
-        data: {
-          path: file.filename,
+    try {
+      console.log(req.files);
+      const prevData = await prisma.productImage.deleteMany({
+        where: {
           productId: req.params.productId,
         },
       });
-    });
-
-    log(
-      req,
-      "UPDATE",
-      `Product images updated for product ${req.params.productId}`
-    );
-    respond(res, req, 200, "success");
+      req.files.forEach(async (file) => {
+        const img = await prisma.productImage.create({
+          data: {
+            path: file.filename,
+            productId: req.params.productId,
+          },
+        });
+      });
+      log(
+        req,
+        "UPDATE",
+        `Product images updated for product ${req.params.productId}`
+      );
+      respond(res, req, 200, "success");
+    } catch (err) {
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
 );
 
