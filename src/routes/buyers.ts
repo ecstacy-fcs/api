@@ -25,9 +25,6 @@ route.get(
         where: {
           user: {
             deleted: false,
-            adminProfile: {
-              is: null,
-            },
           },
         },
         select: {
