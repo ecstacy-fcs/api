@@ -155,7 +155,7 @@ route.post("/login", async (req: any, res, next) => {
       return;
     }
 
-    if(user.banned){
+    if (user.banned) {
       respond(res, req, 403, ERROR.ACCOUNT_BANNED);
       return;
     }
@@ -179,16 +179,22 @@ route.get("/logout", isUser, async (req: any, res, next) => {
   return;
 });
 
-
-route.get("/user", isUser, isNotDeleted, isNotBanned, async (req: any, res, next) => {
-  if (!req.session?.uid || !req.user) return respond(res, req, 200, undefined);
-  respond(res, req, 200, "logged-in user", {
-    id: req.user.id,
-    email: req.user.email,
-    name: req.user.name,
-    verified: req.user.verified,
-  });
-});
+route.get(
+  "/user",
+  isUser,
+  isNotDeleted,
+  isNotBanned,
+  async (req: any, res, next) => {
+    if (!req.session?.uid || !req.user)
+      return respond(res, req, 200, undefined);
+    respond(res, req, 200, "logged-in user", {
+      id: req.user.id,
+      email: req.user.email,
+      name: req.user.name,
+      verified: req.user.verified,
+    });
+  }
+);
 
 route.get("/verify", async (req, res, next) => {
   const { token, userId } = req.query as { token: string; userId: string };
