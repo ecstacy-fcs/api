@@ -64,6 +64,16 @@ route.get(
               id: true,
               name: true,
               price: true,
+              seller: {
+                select: {
+                  id: true,
+                  user: {
+                    select: {
+                      name: true,
+                    }
+                  }
+                }
+              }
             }
           }
         }
