@@ -49,24 +49,24 @@ route.get(
     try {
       const orders = await prisma.orders.findMany({
         where: { buyer: { userId: req.user.id } },
-        select:{
+        select: {
           id: true,
           status: true,
           time: true,
           quantity: true,
-          buyer:{
-            select:{
+          buyer: {
+            select: {
               id: true,
-            }
+            },
           },
-          product:{
-            select:{
+          product: {
+            select: {
               id: true,
               name: true,
               price: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
       respond(res, req, 200, "success", orders);
     } catch (err) {
