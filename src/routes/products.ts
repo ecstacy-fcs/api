@@ -23,7 +23,7 @@ const upload = multer({
     fileSize: 1000000,
   },
   storage: multer.diskStorage({
-    destination: "./src/uploads/product-images",
+    destination: `${process.env.UPLOADS_ROOT}/product-images`,
     filename: async (req, file, cb) => {
       const ext = file.mimetype.split("/")[1];
       cb(null, `${uuidV4()}.${ext}`);
