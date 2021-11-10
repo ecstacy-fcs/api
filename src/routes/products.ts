@@ -4,7 +4,9 @@ import express from "express";
 import Joi from "joi";
 import multer from "multer";
 import { BAD_INPUT, INTERNAL_ERROR } from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
+  catchError,
   isAdmin,
   isApprovedSellerOrAdmin,
   isNotBanned,
@@ -34,7 +36,7 @@ const route = express();
 const productSchema = Joi.object({
   name: Joi.string().trim().max(28).required(),
   description: Joi.string().trim().max(124).required(),
-  price: Joi.number().positive().max(100000).min(1).required(),
+  price: Joi.number().positive().max(15000).min(1).required(),
   category: Joi.string().trim().required(),
 });
 
@@ -47,26 +49,15 @@ const convertImagePath = (product) => {
 route.get("/", async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
-      where:{
-        AND:[
-          {
+      where: {
+        banned: false,
+        seller: {
+          approved: true,
+          user: {
             banned: false,
+            deleted: false,
           },
-          {
-            seller:{
-              user:{
-                AND:[
-                  {
-                    banned: false,
-                  },
-                  {
-                    deleted: false,
-                  },
-                ],
-              }
-            }
-          }
-        ]
+        },
       },
       include: {
         seller: {
@@ -89,64 +80,60 @@ route.get("/", async (req, res, next) => {
     });
 
     products.forEach(convertImagePath);
-    respond(res, 200, "all products", products);
+    respond(res, req, 200, "all products", products);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
-route.get('/banned', isUser, isUserVerified, isNotDeleted, isNotBanned, isAdmin, async (req, res, next) => {
-  try {
-    const products = await prisma.product.findMany({
-      where:{
-        AND:[
-          {
-            banned: true,
-          },
-          {
-            seller:{
-              user:{
-                AND:[
-                  {
-                    banned: false,
-                  },
-                  {
-                    deleted: false,
-                  },
-                ],
-              }
-            }
-          }
-        ]
-      },
-      include: {
-        seller: {
-          select: {
-            id: true,
+route.get(
+  "/banned",
+  isUser,
+  isUserVerified,
+  isNotDeleted,
+  isNotBanned,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const products = await prisma.product.findMany({
+        where: {
+          banned: true,
+          seller: {
             user: {
-              select: {
-                name: true,
-              },
+              banned: false,
+              deleted: false,
             },
           },
         },
-        images: {
-          select: {
-            path: true,
+        include: {
+          seller: {
+            select: {
+              id: true,
+              user: {
+                select: {
+                  name: true,
+                },
+              },
+            },
           },
+          images: {
+            select: {
+              path: true,
+            },
+          },
+          category: true,
         },
-        category: true,
-      },
-    });
+      });
 
-    products.forEach(convertImagePath);
-    respond(res, 200, "all products", products);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+      products.forEach(convertImagePath);
+      respond(res, req, 200, "all products", products);
+    } catch (err) {
+      console.error(err);
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
-});
+);
 
 route.post(
   "/",
@@ -160,7 +147,7 @@ route.post(
       convert: true,
     });
     if (error) {
-      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
+      respond(res, req, 400, `${BAD_INPUT}: ${error.message}`);
       return;
     }
 
@@ -174,10 +161,12 @@ route.post(
           categoryId: value.category,
         },
       });
-      respond(res, 200, "success", product);
+
+      log(req, "CREATE", `Product ${product.id} created`);
+      respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -185,10 +174,10 @@ route.post(
 route.get("/categories", async (req, res, next) => {
   try {
     const categories = await prisma.productCategory.findMany();
-    respond(res, 200, "success", categories);
+    respond(res, req, 200, "success", categories);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -199,18 +188,27 @@ route.post(
   isNotDeleted,
   isNotBanned,
   isApprovedSellerOrAdmin,
-  upload.array("product-image", 3),
+  catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
-    console.log(req.files);
-    req.files.forEach(async (file) => {
-      const img = await prisma.productImage.create({
-        data: {
-          path: file.filename,
-          productId: req.params.productId,
-        },
+    try {
+      console.log(req.files);
+      req.files.forEach(async (file) => {
+        const img = await prisma.productImage.create({
+          data: {
+            path: file.filename,
+            productId: req.params.productId,
+          },
+        });
       });
-    });
-    respond(res, 200, "success");
+      log(
+        req,
+        "CREATE",
+        `Product images created for product ${req.params.productId}`
+      );
+      respond(res, req, 200, "success");
+    } catch (err) {
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
 );
 
@@ -221,61 +219,84 @@ route.patch(
   isNotDeleted,
   isNotBanned,
   isApprovedSellerOrAdmin,
-  upload.array("product-image", 3),
+  catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
-    console.log(req.files);
-    const prevData = await prisma.productImage.deleteMany({
-      where: {
-        productId: req.params.productId,
-      },
-    });
-
-    req.files.forEach(async (file) => {
-      const img = await prisma.productImage.create({
-        data: {
-          path: file.filename,
+    try {
+      console.log(req.files);
+      const prevData = await prisma.productImage.deleteMany({
+        where: {
           productId: req.params.productId,
         },
       });
-    });
-    respond(res, 200, "success");
+      req.files.forEach(async (file) => {
+        const img = await prisma.productImage.create({
+          data: {
+            path: file.filename,
+            productId: req.params.productId,
+          },
+        });
+      });
+      log(
+        req,
+        "UPDATE",
+        `Product images updated for product ${req.params.productId}`
+      );
+      respond(res, req, 200, "success");
+    } catch (err) {
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
 );
 
-route.post('/:productId/ban', isUser, isUserVerified, isNotDeleted, isNotBanned, isAdmin, async (req, res, next) => {
-  try {
-    const product = await prisma.product.update({
-      where: {
-        id: req.params.productId,
-      },
-      data: {
-        banned: true,
-      },
-    });
-    respond(res, 200, "success", product);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+route.post(
+  "/:productId/ban",
+  isUser,
+  isUserVerified,
+  isNotDeleted,
+  isNotBanned,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const product = await prisma.product.update({
+        where: {
+          id: req.params.productId,
+        },
+        data: {
+          banned: true,
+        },
+      });
+      respond(res, req, 200, "success", product);
+    } catch (err) {
+      console.error(err);
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
-});
+);
 
-route.post('/:productId/unban', isUser, isUserVerified, isNotDeleted, isNotBanned, isAdmin, async (req, res, next) => {
-  try {
-    const product = await prisma.product.update({
-      where: {
-        id: req.params.productId,
-      },
-      data: {
-        banned: false,
-      },
-    });
-    respond(res, 200, "success", product);
-  } catch (err) {
-    console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+route.post(
+  "/:productId/unban",
+  isUser,
+  isUserVerified,
+  isNotDeleted,
+  isNotBanned,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const product = await prisma.product.update({
+        where: {
+          id: req.params.productId,
+        },
+        data: {
+          banned: false,
+        },
+      });
+      respond(res, req, 200, "success", product);
+    } catch (err) {
+      console.error(err);
+      respond(res, req, 500, INTERNAL_ERROR);
+    }
   }
-});
-
+);
 
 route.get("/:productId", async (req, res, next) => {
   try {
@@ -301,10 +322,10 @@ route.get("/:productId", async (req, res, next) => {
     product.images.forEach((image) => {
       image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
     });
-    respond(res, 200, "success", product);
+    respond(res, req, 200, "success", product);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -315,12 +336,12 @@ route.patch(
   isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     const { value, error } = productSchema.validate(req.body, {
       convert: true,
     });
     if (error) {
-      respond(res, 400, `${BAD_INPUT}: ${error.message}`);
+      respond(res, req, 400, `${BAD_INPUT}: ${error.message}`);
       return;
     }
     try {
@@ -328,7 +349,7 @@ route.patch(
         where: { id: req.params.productId },
       });
       if (!product) {
-        respond(res, 404);
+        respond(res, req, 404);
         return;
       }
       product = await prisma.product.update({
@@ -340,10 +361,12 @@ route.patch(
           categoryId: value.category,
         },
       });
-      respond(res, 200, "success", product);
+
+      log(req, "UPDATE", `Product ${product.id} updated`);
+      respond(res, req, 200, "success", product);
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -355,22 +378,24 @@ route.delete(
   isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       const product: Product = await prisma.product.findUnique({
         where: { id: req.params.productId },
       });
       if (!product) {
-        respond(res, 404);
+        respond(res, req, 404);
         return;
       }
       await prisma.product.delete({
         where: { id: req.params.productId },
       });
-      respond(res, 200, "success");
+
+      log(req, "DELETE", `Product ${product.id} deleted`);
+      respond(res, req, 200, "success");
     } catch (err) {
       console.error(err);
-      respond(res, 500, INTERNAL_ERROR);
+      respond(res, req, 500, INTERNAL_ERROR);
     }
   }
 );
@@ -403,15 +428,15 @@ route.get("/category/:categoryId", async (req, res, next) => {
       },
     });
     if (!category) {
-      respond(res, 404);
+      respond(res, req, 404);
       return;
     }
 
     category.products.forEach(convertImagePath);
-    respond(res, 200, "success", category.products);
+    respond(res, req, 200, "success", category.products);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 
@@ -443,15 +468,15 @@ route.get("/seller/:sellerId", async (req, res, next) => {
       },
     });
     if (!seller) {
-      respond(res, 404);
+      respond(res, req, 404);
       return;
     }
 
     seller.products.forEach(convertImagePath);
-    respond(res, 200, "success", seller.products);
+    respond(res, req, 200, "success", seller.products);
   } catch (err) {
     console.error(err);
-    respond(res, 500, INTERNAL_ERROR);
+    respond(res, req, 500, INTERNAL_ERROR);
   }
 });
 

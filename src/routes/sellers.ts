@@ -1,5 +1,7 @@
 import express from "express";
+import path from "path";
 import * as ERROR from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
   isAdmin,
   isNotBanned,
@@ -23,16 +25,13 @@ route.get(
     try {
       const sellers = await prisma.seller.findMany({
         where: {
-          approved:
-            req.query.approved === undefined || req.query.approved === "true",
-            user:{
-                deleted:false
-            }
+          user: {
+            deleted: false,
+          },
         },
         select: {
           id: true,
           approved: true,
-          approvalDocument: true,
           user: {
             select: {
               id: true,
@@ -44,10 +43,42 @@ route.get(
           },
         },
       });
-      respond(res, 200, "Success", sellers);
+      respond(res, req, 200, "Success", sellers);
     } catch (error) {
       console.error(error);
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
+    }
+  }
+);
+
+route.get(
+  "/:id/proposal",
+  isUser,
+  isNotDeleted,
+  isUserVerified,
+  isAdmin,
+  async (req, res, next) => {
+    try {
+      const seller = await prisma.seller.findUnique({
+        where: {
+          id: req.params.id,
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      if (!seller || seller.user.deleted) {
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
+        return;
+      }
+
+      res.sendFile(
+        path.resolve(__dirname, "../uploads/proposals", seller.approvalDocument)
+      );
+    } catch (err) {
+      console.error(err);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -68,7 +99,7 @@ route.get(
         select: {
           id: true,
           approved: true,
-          approvalDocument: true,
+          // approvalDocument: true,
           user: {
             select: {
               id: true,
@@ -82,12 +113,12 @@ route.get(
         },
       });
       if (!seller || seller.user.deleted) {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 200, "Success", seller);
+      respond(res, req, 200, "Success", seller);
     } catch (error) {
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -99,20 +130,21 @@ route.patch(
   isNotBanned,
   isUserVerified,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       await prisma.seller.update({
         where: { id: req.params.id },
         data: { approved: true },
       });
-      respond(res, 200);
+      log(req, "UPDATE", `Seller ${req.params.id} approved`);
+      respond(res, req, 200);
     } catch (error) {
       // Record not found
       if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -124,22 +156,47 @@ route.patch(
   isNotBanned,
   isUserVerified,
   isAdmin,
-  async (req, res, next) => {
+  async (req: any, res, next) => {
     try {
       await prisma.seller.delete({
         where: { id: req.params.id },
       });
-      respond(res, 200);
+
+      log(req, "UPDATE", `Seller ${req.params.id} denied`);
+      respond(res, req, 200);
     } catch (error) {
       // Record not found
       if (error.code === "P2025") {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
 
+route.delete(
+  "/:id",
+  isUser,
+  isNotDeleted,
+  isUserVerified,
+  isAdmin,
+  async (req: any, res, next) => {
+    try {
+      await prisma.seller.delete({
+        where: { id: req.params.id },
+      });
+      log(req, "UPDATE", `Seller ${req.params.id} deleted`);
+      respond(res, req, 200);
+    } catch (error) {
+      // Record not found
+      if (error.code === "P2025") {
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
+        return;
+      }
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
+    }
+  }
+);
 
 export default route;

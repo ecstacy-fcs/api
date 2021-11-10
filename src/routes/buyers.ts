@@ -23,12 +23,12 @@ route.get(
     try {
       const buyers = await prisma.buyer.findMany({
         where: {
-            user:{
-                deleted: false,
-                adminProfile:{
-                    is: null
-                }
-            }
+          user: {
+            deleted: false,
+            adminProfile: {
+              is: null,
+            },
+          },
         },
         select: {
           id: true,
@@ -44,10 +44,10 @@ route.get(
         },
       });
 
-      respond(res, 200, "Success", buyers);
+      respond(res, req, 200, "Success", buyers);
     } catch (error) {
       console.error(error);
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
@@ -80,16 +80,14 @@ route.get(
         },
       });
       if (!buyer || buyer.user.deleted) {
-        respond(res, 404, ERROR.ACCOUNT_NOT_FOUND);
+        respond(res, req, 404, ERROR.ACCOUNT_NOT_FOUND);
         return;
       }
-      respond(res, 200, "Success", buyer);
+      respond(res, req, 200, "Success", buyer);
     } catch (error) {
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
     }
   }
 );
-
-
 
 export default route;

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import express from "express";
 import Joi from "joi";
 import * as ERROR from "src/constants/errors";
+import { log } from "src/lib/log";
 import {
   isBuyer,
   isNotBanned,
@@ -28,7 +29,7 @@ route.post(
     }).validate(req.body, { convert: true });
     if (error) {
       console.error(error);
-      respond(res, 400, ERROR.BAD_INPUT);
+      respond(res, req, 400, ERROR.BAD_INPUT);
       return;
     }
 
@@ -39,7 +40,7 @@ route.post(
         where: { id: productId },
       });
       if (!product) {
-        respond(res, 404, ERROR.PRODUCT_NOT_FOUND);
+        respond(res, req, 404, ERROR.PRODUCT_NOT_FOUND);
         return;
       }
 
@@ -50,6 +51,7 @@ route.post(
           quantity: 1,
         },
       });
+      log(req, "CREATE", `Order created for product ${productId}`);
 
       const body = {
         amount: product.price * 100, //razorpay processess amount in Paise
@@ -79,10 +81,12 @@ route.post(
           },
         }
       );
-      respond(res, 200, "Payment Link", response.data.short_url);
+
+      log(req, "CREATE", `Payment request generated for order ${order.id}`);
+      respond(res, req, 200, "Payment Link", response.data.short_url);
     } catch (exception) {
       console.error(exception);
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
       return;
     }
   }
@@ -108,7 +112,7 @@ route.get(
     }).validate(req.query, { convert: true });
     if (error) {
       console.log(error);
-      respond(res, 400, ERROR.BAD_INPUT);
+      respond(res, req, 400, ERROR.BAD_INPUT);
       return;
     }
 
@@ -120,7 +124,7 @@ route.get(
         .update(value.payload)
         .digest("hex");
     } catch (err) {
-      respond(res, 500, ERROR.INTERNAL_ERROR);
+      respond(res, req, 500, ERROR.INTERNAL_ERROR);
       return;
     }
 
@@ -130,15 +134,15 @@ route.get(
           where: { id: value.orderId },
           data: { status: true },
         });
-        respond(res, 200, "Payment Successful", { status: true });
+        respond(res, req, 200, "Payment Successful", { status: true });
         return;
       } catch (exception) {
-        respond(res, 500, ERROR.INTERNAL_ERROR, { status: false });
+        respond(res, req, 500, ERROR.INTERNAL_ERROR, { status: false });
         return;
       }
     }
 
-    respond(res, 400, "Payment Not Successful", { status: false });
+    respond(res, req, 400, "Payment Not Successful", { status: false });
     return;
   }
 );
