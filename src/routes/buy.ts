@@ -64,9 +64,19 @@ route.get(
               id: true,
               name: true,
               price: true,
-            },
-          },
-        },
+              seller: {
+                select: {
+                  id: true,
+                  user: {
+                    select: {
+                      name: true,
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       });
       respond(res, req, 200, "success", orders);
     } catch (err) {
