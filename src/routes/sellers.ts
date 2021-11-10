@@ -117,6 +117,7 @@ route.get(
             select: {
               id: true,
               name: true,
+              price: true,
             },
           },
         },

@@ -192,6 +192,8 @@ route.get(
       email: req.user.email,
       name: req.user.name,
       verified: req.user.verified,
+      address: req.user.address,
+      phoneNumber: req.user.phoneNumber,
     });
   }
 );
