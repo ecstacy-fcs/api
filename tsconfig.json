@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "esModuleInterop": true,
-    "module": "commonjs",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "noEmit": false,
     "outDir": "dist",
     "resolveJsonModule": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "target": "es6",
     "baseUrl": ".",
     "rootDir": "./src",

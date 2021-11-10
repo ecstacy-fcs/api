@@ -35,7 +35,7 @@ const route = express();
 
 const productSchema = Joi.object({
   name: Joi.string().trim().max(28).required(),
-  description: Joi.string().trim().max(124).required(),
+  description: Joi.string().trim().max(1024).required(),
   price: Joi.number().positive().max(15000).min(1).required(),
   category: Joi.string().trim().required(),
 });
@@ -321,6 +321,11 @@ route.get("/:productId", async (req, res, next) => {
         category: true,
       },
     });
+
+    if (!product) {
+      respond(res, req, 404, "Product not found.", null);
+      return;
+    }
 
     convertImagePath(product);
     respond(res, req, 200, "success", product);

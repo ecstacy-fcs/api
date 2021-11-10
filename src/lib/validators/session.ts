@@ -56,6 +56,14 @@ export default async function validate(req, res, next) {
     return;
   }
 
+  if(user.banned){
+    await prisma.session.delete({ where: { sid: req.sessionID } });
+    req.session.destroy(() => {
+      respond(res, req, 400, ERROR.ACCOUNT_BANNED, undefined);
+    });
+    return;
+  }
+  
   req.session.lastActive = currentTime;
   req.user = user;
 

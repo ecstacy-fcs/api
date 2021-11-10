@@ -67,7 +67,7 @@ model Buyer {
 model Product {
   id          String          @id @default(uuid())
   name        String
-  description String
+  description String          @db.VarChar(1028)
   price       Int
   sellerId    String
   categoryId  String
