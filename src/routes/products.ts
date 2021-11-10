@@ -52,7 +52,7 @@ route.get("/", async (req, res, next) => {
         banned: false,
         seller: {
           approved: true,
-          user: { 
+          user: {
             banned: false,
             deleted: false,
           },
@@ -227,7 +227,7 @@ route.patch(
         },
       });
     });
-    
+
     log(
       req,
       "UPDATE",

@@ -82,7 +82,6 @@ route.post(
 
       log(req, "CREATE", `Payment request generated for order ${order.id}`);
       respond(res, req, 200, "Payment Link", response.data.short_url);
-
     } catch (exception) {
       console.error(exception);
       respond(res, req, 500, ERROR.INTERNAL_ERROR);

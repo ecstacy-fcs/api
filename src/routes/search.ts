@@ -23,7 +23,7 @@ route.get("/:keyword", async (req, res, next) => {
         banned: false,
         seller: {
           approved: true,
-          user: { 
+          user: {
             banned: false,
             deleted: false,
           },

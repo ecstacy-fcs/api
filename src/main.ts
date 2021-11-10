@@ -1,9 +1,11 @@
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import { json } from "body-parser";
 import cors from "cors";
+import csurf from "csurf";
 import "dotenv/config";
 import express, { Request } from "express";
 import session from "express-session";
+import helmet from "helmet";
 import {
   isAdmin,
   isBuyer,
@@ -24,15 +26,14 @@ import search from "./routes/search";
 import sell from "./routes/sell";
 import seller from "./routes/sellers";
 import user from "./routes/user";
-import { csrfProtection } from "./csrf";
 
-const helmet = require("helmet");
 const app = express();
-
-app.use(helmet());
 
 // We trust our Nginx proxy to supply us with correct headers
 app.set("trust proxy", true);
+
+// Helmet to add secure headers
+app.use(helmet());
 
 // CORS settings
 app.use(
@@ -71,8 +72,8 @@ app.use(
     }),
   })
 );
-
-app.use("/", csrfProtection)
+// Early block requests that don't validate thru CSRF
+app.use(csurf());
 app.use(sessionValidator);
 
 // All the other API routes

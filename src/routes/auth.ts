@@ -12,7 +12,6 @@ import { respond } from "src/lib/request-respond";
 import * as email from "src/lib/validators/email";
 import * as password from "src/lib/validators/password";
 import prisma from "src/prisma";
-import { csrfProtection } from "src/csrf";
 
 const route = express();
 
@@ -117,7 +116,12 @@ route.post("/register", async (req: any, res, next) => {
 
 route.post("/login", async (req: any, res, next) => {
   if (req.user) {
-    respond(res, req, 400, "You are already logged in! Log out to login again.");
+    respond(
+      res,
+      req,
+      400,
+      "You are already logged in! Log out to login again."
+    );
     return;
   }
   const { value, error } = Joi.object({
@@ -151,7 +155,7 @@ route.post("/login", async (req: any, res, next) => {
       return;
     }
 
-    if(user.banned){
+    if (user.banned) {
       respond(res, req, 403, "Account banned. Contact admin to unban.");
       return;
     }
@@ -169,7 +173,9 @@ route.post("/login", async (req: any, res, next) => {
 route.get("/logout", isUser, async (req: any, res, next) => {
   log(req, "DELETE", "User session destroyed, logged out");
   res = res.clearCookie(process.env.SESSION_NAME);
-  req.session.destroy((err) => {console.log(err); respond(res, req, 200, undefined, undefined, undefined, true)});
+  req.session.destroy((err) => {
+    respond(res, req, 200, undefined, undefined, undefined, true);
+  });
   return;
 });
 
@@ -395,7 +401,6 @@ route.post("/update-password", async (req: any, res, next) => {
       "User password updated"
     );
     respond(res, req, 200, "Password updated!");
-
   } catch (err) {
     respond(res, req, 500, ERROR.INTERNAL_ERROR);
   }
