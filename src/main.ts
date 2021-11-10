@@ -27,6 +27,8 @@ import sell from "./routes/sell";
 import seller from "./routes/sellers";
 import user from "./routes/user";
 
+const PROD_ENV = process.env.ENV === "prod";
+
 const app = express();
 
 // We trust our Nginx proxy to supply us with correct headers
@@ -60,8 +62,7 @@ app.use(
       maxAge: 60 * 60 * 1000,
       httpOnly: true,
       sameSite: "lax",
-      //TODO: set secure to true,
-      secure: false,
+      secure: PROD_ENV,
     },
     name: process.env.SESSION_NAME,
     resave: false,
