@@ -1,6 +1,7 @@
 import { MulterError } from "multer";
 import {
   ACCESS_DENIED,
+  ACCOUNT_BANNED,
   ACCOUNT_DELETED,
   INTERNAL_ERROR,
   UNVERIFIED_ACCOUNT,
@@ -39,7 +40,7 @@ export const isUserVerified = (req, res, next) => {
 
 export const isNotBanned = (req, res, next) => {
   if (!req.user?.banned) return next();
-  respond(res, req, 403, ACCESS_DENIED);
+  respond(res, req, 403, ACCOUNT_BANNED);
 };
 
 export const isSellerApproved = (req, res, next) => {

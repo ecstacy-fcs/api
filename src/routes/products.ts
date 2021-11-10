@@ -139,6 +139,7 @@ route.post(
   "/",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req: any, res, next) => {
@@ -184,6 +185,8 @@ route.post(
   "/:productId/images",
   isUser,
   isUserVerified,
+  isNotDeleted,
+  isNotBanned,
   isApprovedSellerOrAdmin,
   catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
@@ -213,6 +216,8 @@ route.patch(
   "/:productId/images",
   isUser,
   isUserVerified,
+  isNotDeleted,
+  isNotBanned,
   isApprovedSellerOrAdmin,
   catchError(upload.array("product-image", 3)),
   async (req: any, res, next) => {
@@ -328,6 +333,7 @@ route.patch(
   "/:productId",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req: any, res, next) => {
@@ -369,6 +375,7 @@ route.delete(
   "/:productId",
   isUser,
   isNotDeleted,
+  isNotBanned,
   isUserVerified,
   isApprovedSellerOrAdmin,
   async (req: any, res, next) => {
