@@ -62,7 +62,7 @@ route.post(
         product.seller.user.deleted ||
         product.banned
       ) {
-        respond(res, req, 404, ERROR.PRODUCT_NOT_FOUND);
+        respond(res, req, 404, "Product is no longer available");
         return;
       }
 
