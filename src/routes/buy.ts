@@ -12,54 +12,6 @@ import { respond } from "src/lib/request-respond";
 import prisma from "src/prisma";
 const route = express();
 
-route.post(
-  "/product/:productId",
-  isUser,
-  isNotDeleted,
-  isNotBanned,
-  isUserVerified,
-  isBuyer,
-  async (req: any, res, next) => {
-    const { productId } = req.params;
-    try {
-      const product = await prisma.product.findUnique({
-        where: { id: productId },
-        select:{
-          id: true,
-          banned: true,
-          seller:{
-            select:{
-              id: true,
-              user:{
-                select:{
-                  id: true,
-                  banned: true,
-                  deleted: true,
-                }
-              }
-            }
-          }
-        }
-      })
-      if(product && (product.banned || product.seller.user.banned || product.seller.user.deleted)){
-        respond(res,res,400,ERROR.BAD_REQUEST);
-        return;
-      }
-      const order = await prisma.orders.create({
-        data: {
-          buyerId: req.user.buyerProfile.id,
-          productId: productId,
-        },
-      });
-      log(req, "CREATE", `Order created for product ${productId}`);
-      respond(res, req, 200, "success", order);
-    } catch (err) {
-      console.error(err);
-      respond(res, req, 500, ERROR.INTERNAL_ERROR);
-      return;
-    }
-  }
-);
 
 route.get(
   "/orders",
