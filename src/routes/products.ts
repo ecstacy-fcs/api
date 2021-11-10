@@ -42,7 +42,7 @@ const productSchema = Joi.object({
 
 const convertImagePath = (product) => {
   product.images.forEach((image) => {
-    image.path = `${process.env.API_BASE_URL}/static/product-images/${image.path}`;
+    image.path = `/static/product-images/${image.path}`;
   });
 };
 

@@ -78,7 +78,6 @@ app.use(csurf());
 app.use(sessionValidator);
 
 // All the other API routes
-app.use("/static", express.static(`${__dirname}/uploads`));
 app.use("/auth", auth);
 app.use("/products", products);
 app.use("/buy", isUser, isUserVerified, isBuyer, buy);
