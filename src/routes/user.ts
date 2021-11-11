@@ -260,7 +260,15 @@ route.post(
         respond(res, req, 400, "You cannot ban yourself!");
         return;
       }
-      if (req.user.adminProfile) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { adminProfile: true },
+      });
+      if (!user) {
+        respond(res, req, 404, ACCOUNT_NOT_FOUND);
+        return;
+      }
+      if (user.adminProfile) {
         respond(res, req, 400, "Admins can only be banned by a superadmin");
         return;
       }
@@ -272,11 +280,6 @@ route.post(
       log(req, "UPDATE", `User ${userId} banned`);
       respond(res, req, 200, "Success");
     } catch (error) {
-      // Record not found
-      if (error.code === "P2025") {
-        respond(res, req, 404, ACCOUNT_NOT_FOUND);
-        return;
-      }
       respond(res, req, 500, INTERNAL_ERROR);
     }
   }
