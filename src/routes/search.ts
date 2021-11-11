@@ -26,6 +26,7 @@ route.get("/:keyword", async (req, res, next) => {
         OR: [
           { name: { contains: keyword } },
           { category: { name: { contains: keyword } } },
+          { description: { contains: keyword } },
         ],
       },
       include: {
