@@ -208,6 +208,7 @@ route.get(
       verified: req.user.verified,
       address: req.user.address,
       phoneNumber: req.user.phoneNumber,
+      admin: Boolean(req.user.adminProfile),
     });
   }
 );
