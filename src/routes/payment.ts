@@ -74,7 +74,7 @@ route.post(
         },
       });
 
-      await new Promise(f => setTimeout(f, 2000));
+      await new Promise((f) => setTimeout(f, 2000));
 
       log(req, "CREATE", `Order ${order.id} created for product ${productId}`);
 
