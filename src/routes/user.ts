@@ -10,7 +10,6 @@ import { log } from "src/lib/log";
 import { mail } from "src/lib/mail";
 import {
   isAdmin,
-  isBuyer,
   isNotBanned,
   isNotDeleted,
   isUser,
@@ -259,6 +258,10 @@ route.post(
       const { userId } = req.params;
       if (userId === req.user.id) {
         respond(res, req, 400, "You cannot ban yourself!");
+        return;
+      }
+      if (req.user.adminProfile) {
+        respond(res, req, 400, "Admins can only be banned by a superadmin");
         return;
       }
       await prisma.user.update({
