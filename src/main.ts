@@ -68,7 +68,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: new PrismaSessionStore(prisma, {
-      checkPeriod: 24 * 60 * 60 * 1000,
+      checkPeriod: 60 * 60 * 1000,
       dbRecordIdIsSessionId: true,
     }),
   })
