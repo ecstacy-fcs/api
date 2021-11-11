@@ -144,14 +144,21 @@ route.get("/validate", async (req: any, res, next) => {
   }
   if (generatedSignature === signature) {
     try {
-      const order = await prisma.orders.update({
+      const order = await prisma.orders.findUnique({
+        where: { id: orderId },
+        include: { buyer: { include: { user: true } } },
+      });
+      if (!order || order.status) {
+        respond(res, res, 400, "Order does not exist or already paid up");
+        return;
+      }
+      await prisma.orders.update({
         where: { id: orderId },
         data: { status: true },
-        include: { buyer: { include: { user: true } } },
       });
       log(
         { ...req, user: order.buyer.user },
-        "CREATE",
+        "UPDATE",
         `Payment recorded for order ${orderId}`
       );
       res.redirect(`${process.env.CLIENT_ORIGIN}/payment?status=success`);
