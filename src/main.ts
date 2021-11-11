@@ -31,11 +31,23 @@ const PROD_ENV = process.env.ENV === "prod";
 
 const app = express();
 
-// We trust our Nginx proxy to supply us with correct headers
-app.set("trust proxy", true);
-
 // Helmet to add secure headers
 app.use(helmet());
+
+app.use(helmet.contentSecurityPolicy());
+app.use(helmet.dnsPrefetchControl());
+app.use(helmet.expectCt());
+app.use(helmet.frameguard());
+app.use(helmet.hidePoweredBy());
+app.use(helmet.hsts());
+app.use(helmet.ieNoOpen());
+app.use(helmet.noSniff());
+app.use(helmet.permittedCrossDomainPolicies());
+app.use(helmet.referrerPolicy());
+app.use(helmet.xssFilter());
+
+// We trust our Nginx proxy to supply us with correct headers
+app.set("trust proxy", true);
 
 // CORS settings
 app.use(
