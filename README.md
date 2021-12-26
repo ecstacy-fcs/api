@@ -1,21 +1,72 @@
-# Simple TypeScript Starter
+# Ecstacy API
 
-> Bare minimum TypeScript project template to get started quickly.
+The server side code of Ecstacy, a secure e-commerce web application developed primarily to facilitate buying and selling of products between users.
 
-A bare minimum, no-frills TypeScript starter template with development/production scripts and linting included.
+## Getting Started
 
-- Nodemon + `ts-node` for development
-- `tsc` for building production distribution
+To run the Ecstacy API locally,
 
-Entry file: `src/main.ts`.
+Clone this repo
 
-## Get Started
+```zsh
+git clone https://github.com/ecstacy-fcs/api.git
+```
 
-1. Create a repo from this template and locally clone it. Or... run `npx degit plibither8/typescript` to get it directly onto your machine.
-2. `npm install` or `pnpm install` or `yarn`, as per your taste
-3. `npm run dev` for running in development mode (watches files)
-4. `npm run build` for building production files
-5. `npm run start` for running production-built files
+Go to the project directory and install dependencies
+
+```zsh
+cd api
+npm install
+```
+
+You will need to add the following environment variables to your .env file.
+
+`PORT`
+
+`DATABASE_URL`
+
+`CLIENT_ORIGIN`
+
+`API_BASE_URL`
+
+`SESSION_NAME`
+
+`COOKIE_SECRET`
+
+`UPLOADS_ROOT`
+
+`SENDGRID_API_KEY`
+
+`RAZORPAY_API_TEST_USERNAME`
+
+`RAZORPAY_API_TEST_PASSWORD`
+
+`RAZORPAY_API_LIVE_USERNAME`
+
+`RAZORPAY_API_LIVE_PASSWORD`
+
+Refer to [.env.example](.env.example) for example environment variables.
+
+Run the development server
+
+```zsh
+npm run dev
+```
+
+Open [http://localhost:5000](http://localhost:5000) with your browser to a message that the API is listening at port 5000.
+
+The app uses Razorpay in test mode. To use the live mode, change all instances of `RAZORPAY_API_TEST_USERNAME` to `RAZORPAY_API_LIVE_USERNAME` and `RAZORPAY_API_TEST_PASSWORD` to `RAZORPAY_API_LIVE_PASSWORD`.
+
+To run the Ecstacy web application (both API and client) locally, and for more extensive documentation, refer to the complete guide [here.](https://github.com/ecstacy-fcs/client#readme)
+
+## Authors
+
+This project was developed by **MDMA**
+
+- [Meetakshi Setiya](https://www.github.com/meetakshi253)
+- [Dev Rajput](https://www.github.com/thesantatitan)
+- [Mihir Chaturvedi](https://www.github.com/plibither8)
+- [Ananya Lohani](https://www.github.com/ananyalohani)
 
 ## License
 
